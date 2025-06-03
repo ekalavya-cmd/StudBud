@@ -12,6 +12,7 @@ function TaskList({
 }) {
   const styles = getCardStyles(currentTheme);
   const [editingTask, setEditingTask] = useState(null);
+  const [hasInteractedWithDate, setHasInteractedWithDate] = useState(false);
 
   const editTitleInputRef = useRef(null);
   const editDueDateInputRef = useRef(null);
@@ -21,16 +22,45 @@ function TaskList({
 
   const currentYear = new Date().getFullYear();
 
+  const isValidDate = (dateString) => {
+    const regex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!regex.test(dateString)) {
+      return false;
+    }
+
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) {
+      return false;
+    }
+
+    const [year, month, day] = dateString.split("-").map(Number);
+    return (
+      date.getFullYear() === year &&
+      date.getMonth() + 1 === month &&
+      date.getDate() === day
+    );
+  };
+
   const handleStartEdit = (task) => {
     if (task.completed) {
       toast.info("Cannot edit a completed task.");
       return;
     }
     setEditingTask({ ...task, hours: task.hours || 0 });
+    setHasInteractedWithDate(false);
   };
 
   const handleSaveEdit = () => {
     if (!editingTask) return;
+
+    if (
+      hasInteractedWithDate &&
+      (editingTask.dueDate === "" || !isValidDate(editingTask.dueDate))
+    ) {
+      toast.error("Invalid due date. Please enter a valid date.");
+      return;
+    }
+
     if (
       !editingTask.title ||
       !editingTask.dueDate ||
@@ -41,21 +71,25 @@ function TaskList({
       );
       return;
     }
+
     const parsedHours = parseFloat(editingTask.hours);
     if (isNaN(parsedHours) || parsedHours < 0) {
       toast.error("Please enter a valid number of hours (0 or greater).");
       return;
     }
+
     updateTask({ ...editingTask, hours: parsedHours });
     setEditingTask(null);
+    setHasInteractedWithDate(false);
   };
 
   const handleCancelEdit = () => {
     setEditingTask(null);
+    setHasInteractedWithDate(false);
   };
 
   const validateAndCorrectYear = (dateValue) => {
-    if (!dateValue) return;
+    if (!dateValue || !isValidDate(dateValue)) return;
     const [year, month, day] = dateValue.split("-");
     if (parseInt(year) !== currentYear) {
       const correctedDate = `${currentYear}-${month}-${day}`;
@@ -110,10 +144,9 @@ function TaskList({
     );
   };
 
-  // Custom styles to prevent scaling on the Calendar icon
   const customStyles = `
     .task-card:hover .calendar-icon {
-      transform: scale(1) !important; /* Prevent scaling on hover */
+      transform: scale(1) !important;
     }
   `;
 
@@ -151,6 +184,7 @@ function TaskList({
                   onChange={(e) => {
                     const newDate = e.target.value;
                     setEditingTask({ ...editingTask, dueDate: newDate });
+                    setHasInteractedWithDate(true);
                     validateAndCorrectYear(newDate);
                   }}
                   onKeyDown={(e) =>

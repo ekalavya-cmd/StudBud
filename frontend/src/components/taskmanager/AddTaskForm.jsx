@@ -1,17 +1,18 @@
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import { PlusCircle } from "lucide-react";
 import { toast } from "react-toastify";
 import { getCardStyles } from "../utils/themeUtils";
 
 function AddTaskForm({ addTask, currentTheme }) {
   const styles = getCardStyles(currentTheme);
-  const [newTask, setNewTask] = React.useState({
+  const [newTask, setNewTask] = useState({
     title: "",
     dueDate: "",
     priority: "Medium",
     completed: false,
     hours: "",
   });
+  const [hasInteractedWithDate, setHasInteractedWithDate] = useState(false);
 
   const titleInputRef = useRef(null);
   const dueDateInputRef = useRef(null);
@@ -21,18 +22,52 @@ function AddTaskForm({ addTask, currentTheme }) {
 
   const currentYear = new Date().getFullYear();
 
+  const isValidDate = (dateString) => {
+    const regex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!regex.test(dateString)) {
+      return false;
+    }
+
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) {
+      return false;
+    }
+
+    const [year, month, day] = dateString.split("-").map(Number);
+    return (
+      date.getFullYear() === year &&
+      date.getMonth() + 1 === month &&
+      date.getDate() === day
+    );
+  };
+
   const handleAddTask = () => {
+    // Clear any existing toasts to prevent overlap
+    toast.dismiss();
+
+    // Check for invalid date or empty date after interaction
+    if (
+      hasInteractedWithDate &&
+      (newTask.dueDate === "" || !isValidDate(newTask.dueDate))
+    ) {
+      toast.error("Invalid due date. Please enter a valid date.");
+      return;
+    }
+
+    // Check for empty fields
     if (!newTask.title || !newTask.dueDate || !newTask.hours) {
       toast.error(
         "Please fill in all required fields (title, due date, and hours)."
       );
       return;
     }
+
     const parsedHours = parseFloat(newTask.hours);
     if (isNaN(parsedHours) || parsedHours < 0) {
       toast.error("Please enter a valid number of hours (0 or greater).");
       return;
     }
+
     addTask({ ...newTask, hours: parsedHours });
     setNewTask({
       title: "",
@@ -41,11 +76,12 @@ function AddTaskForm({ addTask, currentTheme }) {
       completed: false,
       hours: "",
     });
+    setHasInteractedWithDate(false);
     titleInputRef.current.focus();
   };
 
   const validateAndCorrectYear = (dateValue) => {
-    if (!dateValue) return;
+    if (!dateValue || !isValidDate(dateValue)) return;
     const [year, month, day] = dateValue.split("-");
     if (parseInt(year) !== currentYear) {
       const correctedDate = `${currentYear}-${month}-${day}`;
@@ -82,7 +118,11 @@ function AddTaskForm({ addTask, currentTheme }) {
           onChange={(e) => {
             const newDate = e.target.value;
             setNewTask({ ...newTask, dueDate: newDate });
+            setHasInteractedWithDate(true);
             validateAndCorrectYear(newDate);
+          }}
+          onBlur={() => {
+            setHasInteractedWithDate(true);
           }}
           onKeyDown={(e) => handleAddTaskKeyPress(e, prioritySelectRef)}
           ref={dueDateInputRef}
