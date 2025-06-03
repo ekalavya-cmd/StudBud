@@ -50,8 +50,8 @@ Follow these steps to set up the project locally:
 ### Clone the Repository
 
 ```bash
-git clone https://github.com/ekalavya-cmd/study-buddy-planner.git
-cd study-buddy-planner
+git clone https://github.com/ekalavya-cmd/StudBud.git
+cd StudBud
 ```
 
 ### Backend Setup
