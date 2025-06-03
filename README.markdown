@@ -1,4 +1,4 @@
-# StudBud - AI-Powered Study Planner
+# StudBud 
 
 StudBud is an AI-powered study planner designed to help students manage their study schedules, track their progress, and stay motivated. It offers a range of features including task management, study analytics, a rewards system, and AI-generated study suggestions to enhance productivity and learning efficiency.
 
