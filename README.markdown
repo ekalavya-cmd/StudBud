@@ -15,7 +15,7 @@ StudBud is an AI-powered study planner designed to help students manage their st
 ## Features
 
 - **Task Management**: Add, edit, delete, and mark tasks as complete. Tasks can have priorities, due dates, and associated study hours.
-- **Study Analytics**: Visualize task completion rates, study hours trends, priority breakdown and productivity snapshots.
+- **Study Analytics**: Visualize task completion rates, study hours trends, priority breakdowns and productivity snapshots.
 - **Rewards System**: Earn points and badges for completing tasks and maintaining study streaks. Redeem points for different themes.
 - **AI Study Assistant**: Get personalized study suggestions and motivational messages powered by AI.
 - **Calendar View**: View tasks on a calendar and manage them by date.
