@@ -14,8 +14,6 @@ function Dashboard({
   setActiveTab,
   toggleTaskComplete,
   currentTheme,
-  logStudyHours,
-  deductStudyHours,
 }) {
   return (
     <div className="space-y-8">
@@ -27,9 +25,8 @@ function Dashboard({
       />
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <StudyHoursCard
+          tasks={tasks}
           studyStats={studyStats}
-          logStudyHours={logStudyHours}
-          deductStudyHours={deductStudyHours}
           currentTheme={currentTheme}
         />
         <TasksCompletedCard

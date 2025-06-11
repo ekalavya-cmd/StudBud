@@ -10,7 +10,7 @@ function ProductivitySnapshot({ tasks, past7Days, currentTheme }) {
   const today = new Date();
   const todayStr = today.toLocaleDateString("en-CA", {
     timeZone: "Asia/Kolkata",
-  }); // "2025-06-03"
+  }); // "2025-06-12"
 
   const overdueTasks = nonDeletedTasks.filter(
     (task) => !task.completed && task.dueDate && task.dueDate < todayStr
@@ -19,30 +19,72 @@ function ProductivitySnapshot({ tasks, past7Days, currentTheme }) {
     (task) => !task.completed && task.priority === "High"
   ).length;
 
+  // Calculate completed tasks and total hours per day, with full day names
   const completedTasksByDay = past7Days.map((dayObj) => {
-    const count = nonDeletedTasks.filter(
+    const completedTasksOnDay = nonDeletedTasks.filter(
       (task) => task.completed && task.completedDate === dayObj.date
-    ).length;
+    );
+    const count = completedTasksOnDay.length;
+    const hours = completedTasksOnDay.reduce(
+      (sum, task) => sum + (task.hours || 0),
+      0
+    );
+    // Derive the full day name from the date
+    const date = new Date(dayObj.date);
+    const dayName = date.toLocaleDateString("en-US", {
+      weekday: "long",
+      timeZone: "Asia/Kolkata",
+    });
     return {
-      day: dayObj.day,
+      day: dayName,
       date: dayObj.date,
       count,
+      hours,
     };
   });
 
-  const mostProductiveDay = completedTasksByDay.reduce(
-    (max, day) => (day.count > max.count ? day : max),
-    { day: "", date: "", count: 0 }
+  // Find the most productive day(s) by task count, then by least hours
+  const maxTasks = Math.max(...completedTasksByDay.map((day) => day.count));
+  const daysWithMaxTasks = completedTasksByDay.filter(
+    (day) => day.count === maxTasks
   );
 
-  const mostProductiveInsight =
-    mostProductiveDay.count > 0
-      ? `You're most productive on ${mostProductiveDay.day}s, with ${
-          mostProductiveDay.count
-        } task${mostProductiveDay.count !== 1 ? "s" : ""} completed on ${
-          mostProductiveDay.date
-        }.`
-      : "You're just getting started—complete your first task today to build your streak!";
+  let mostProductiveDays;
+  if (daysWithMaxTasks.length === 1) {
+    mostProductiveDays = daysWithMaxTasks;
+  } else {
+    // If multiple days have the same task count, prefer the day with fewer hours
+    const minHours = Math.min(...daysWithMaxTasks.map((day) => day.hours));
+    mostProductiveDays = daysWithMaxTasks.filter(
+      (day) => day.hours === minHours
+    );
+  }
+
+  // Format the insight message
+  let mostProductiveInsight;
+  if (maxTasks === 0) {
+    mostProductiveInsight =
+      "You're just getting started—complete your first task today to build your streak!";
+  } else {
+    const dayNames =
+      mostProductiveDays.length === 1
+        ? mostProductiveDays[0].day
+        : mostProductiveDays
+            .map((day) => day.day)
+            .join(", ")
+            .replace(/, (?=[^,]*$)/, " and "); // Replace last comma with "and"
+    const dates =
+      mostProductiveDays.length === 1
+        ? mostProductiveDays[0].date
+        : mostProductiveDays
+            .map((day) => day.date)
+            .join(", ")
+            .replace(/, (?=[^,]*$)/, " and ");
+    mostProductiveInsight = `You're most productive on ${dayNames}, with ${maxTasks} task${
+      maxTasks !== 1 ? "s" : ""
+    } completed on ${dates}.`;
+  }
+
   const overdueInsight =
     overdueTasks.length > 0
       ? `You have ${overdueTasks.length} overdue task${
