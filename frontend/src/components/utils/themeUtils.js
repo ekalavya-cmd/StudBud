@@ -378,7 +378,7 @@ const getCardStyles = (currentTheme) => {
             : isForestWhisper(currentTheme)
               ? "bg-green-500"
               : "bg-indigo-600"
-    } rounded-t-md transition-all duration-300 hover:scale-105`,
+    } rounded-t-md transition-all duration-300`,
     barHours: `${
       isDarkMode(currentTheme)
         ? "bg-purple-500"
@@ -389,7 +389,7 @@ const getCardStyles = (currentTheme) => {
             : isForestWhisper(currentTheme)
               ? "bg-lime-500"
               : "bg-purple-600"
-    } rounded-t-md transition-all duration-300 hover:scale-105`,
+    } rounded-t-md transition-all duration-300`,
     snapshotCard: `${
       isDarkMode(currentTheme)
         ? "bg-indigo-900 border border-indigo-800"
