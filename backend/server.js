@@ -2,8 +2,8 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const dotenv = require("dotenv");
+const axios = require("axios"); // Using axios instead of fetch
 
-// Note: Using Node.js built-in fetch (requires Node.js 18+)
 dotenv.config();
 
 // Set the timezone to IST (Asia/Kolkata) at the start
@@ -109,6 +109,20 @@ const userDataSchema = new mongoose.Schema({
 });
 
 const UserData = mongoose.model("UserData", userDataSchema);
+
+// Predefined study tips to use as fallback
+const predefinedStudyTips = [
+  "Here's a study tip for students:\n\n- Use the Pomodoro Technique: Study for 25 minutes, then take a 5-minute break. This improves focus by working with your brain's natural attention cycles. Ideal for complex programming tasks.",
+  "Here's a study tip for students:\n\n- Create a dedicated study environment free from distractions. Your brain forms associations with physical spaces, making it easier to focus when you're in your designated study area. Perfect for deep technical learning.",
+  "Here's a study tip for students:\n\n- Practice active recall by testing yourself rather than just re-reading notes. Try explaining database concepts or algorithms out loud as if teaching someone else. This strengthens neural pathways and improves retention.",
+  "Here's a study tip for students:\n\n- Use spaced repetition for memorizing important concepts. Review material at increasing intervals (1 day, 3 days, 1 week, etc.). This technique is especially effective for remembering syntax rules and programming patterns.",
+  "Here's a study tip for students:\n\n- Break complex topics into smaller, manageable chunks. When learning a new programming language, master one concept before moving to the next. This prevents overwhelm and builds confidence through incremental success.",
+  "Here's a study tip for students:\n\n- Create mind maps to visualize connections between different computing concepts. This spatial organization helps your brain form meaningful associations and see the bigger picture in complex technical subjects.",
+  "Here's a study tip for students:\n\n- Set specific, measurable study goals for each session. Instead of \"study networking,\" aim to \"understand and diagram the OSI model layers.\" This creates clear endpoints and a sense of accomplishment.",
+  "Here's a study tip for students:\n\n- Use the Feynman Technique: Explain a complex computing concept in simple terms as if teaching a beginner. This reveals gaps in your understanding and reinforces your knowledge of the material.",
+  "Here's a study tip for students:\n\n- Alternate between different subjects or problem types in a single study session. This interleaving approach forces your brain to retrieve different strategies and strengthens overall learning more than blocked practice.",
+  "Here's a study tip for students:\n\n- Take brief, regular movement breaks during study sessions. Physical activity increases blood flow to the brain, improving cognitive function. Even a 5-minute walk can refresh your mind for tackling difficult coding problems."
+];
 
 // API Endpoints
 
@@ -232,9 +246,88 @@ app.post("/api/user/:userId", async (req, res) => {
   }
 });
 
+// Function to try getting a suggestion from Hugging Face API using facebook/bart-base
+async function getHuggingFaceSuggestion(promptText) {
+  // Using the working model we found: facebook/bart-base
+  const model = "facebook/bart-base";
+  
+  // Check if we have an API key before trying to call the API
+  if (!process.env.HUGGINGFACE_API_KEY) {
+    console.log("No API key found - skipping API calls");
+    throw new Error("No API key configured");
+  }
+  
+  try {
+    console.log(`Attempting to use model: ${model}`);
+    
+    // Since bart-base is a text2text model, we need to format the prompt properly
+    const isStudyTipRequest = promptText.includes("Generate a concise study tip");
+    
+    // Format the prompt appropriately for the model
+    const formattedPrompt = isStudyTipRequest
+      ? `Create a short, actionable study tip that helps students improve their learning efficiency. The tip should be concise and specific. For example: "To improve focus, study in 25-minute blocks with 5-minute breaks. This matches your brain's attention span and boosts productivity."`
+      : `Generate a study suggestion based on the following information: ${promptText}`;
+    
+    const response = await axios({
+      method: 'post',
+      url: `https://api-inference.huggingface.co/models/${model}`,
+      headers: {
+        'Authorization': `Bearer ${process.env.HUGGINGFACE_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      data: {
+        inputs: formattedPrompt,
+        parameters: {
+          max_length: 300,
+          min_length: 50,  // Add a minimum length to encourage non-empty responses
+          do_sample: true,
+          temperature: 0.7,
+          num_beams: 4
+        }
+      },
+      timeout: 15000 // 15 second timeout
+    });
+    
+    if (response.status === 200) {
+      // Handle different response formats
+      let generatedText = "";
+      
+      if (Array.isArray(response.data) && response.data.length > 0) {
+        generatedText = response.data[0].generated_text || "";
+      } else if (typeof response.data === 'string') {
+        generatedText = response.data;
+      } else if (response.data && response.data.generated_text) {
+        generatedText = response.data.generated_text;
+      }
+      
+      console.log(`Successfully generated suggestion using model: ${model}`);
+      console.log("Raw generated text:", generatedText);
+      
+      // Check if the response is empty or too short (less than 10 chars)
+      if (!generatedText || generatedText.trim().length < 10) {
+        console.log("Response too short or empty, using fallback");
+        throw new Error("Empty or too short response from model");
+      }
+      
+      // Ensure proper formatting for study tips
+      if (isStudyTipRequest && !generatedText.toLowerCase().includes("here's a study tip")) {
+        generatedText = `Here's a study tip for students:\n\n- ${generatedText}`;
+      }
+      
+      return generatedText.trim();
+    } else {
+      throw new Error(`Invalid response status: ${response.status}`);
+    }
+  } catch (error) {
+    console.error(`Error with model ${model}:`, error.message);
+    throw error;
+  }
+}
+
 // Endpoint for AI suggestions using Hugging Face Inference API
 app.post("/api/ai-suggestion", async (req, res) => {
   const { tasks = [], studyHabits = {}, customPrompt } = req.body;
+  
   try {
     // Validate tasks is an array
     if (!Array.isArray(tasks)) {
@@ -250,149 +343,59 @@ app.post("/api/ai-suggestion", async (req, res) => {
     const cacheKey = JSON.stringify({ tasks, studyHabits, customPrompt });
     const userData = await UserData.findOne({ userId: "user123" });
     if (
-      userData.cachedSuggestions &&
+      userData?.cachedSuggestions &&
       userData.cachedSuggestions.get(cacheKey)
     ) {
       return res.json({ suggestion: userData.cachedSuggestions.get(cacheKey) });
     }
 
-    // Filter tasks to only include incomplete tasks due today or upcoming
-    const today = new Date();
-    const todayStr = today.toISOString().split("T")[0]; // YYYY-MM-DD in IST
-    const filteredTasks = tasks.filter((task) => {
-      const isNotCompleted = !task.completed;
-      const isDueTodayOrUpcoming = new Date(task.dueDate) >= new Date(todayStr);
-      return isNotCompleted && isDueTodayOrUpcoming;
-    });
+    // Check if this is a study tip request (based on the customPrompt content)
+    const isStudyTipRequest = customPrompt && customPrompt.includes("Generate a concise study tip");
 
-    // Get today's study hours from studyHabits
-    const todayStudyHours =
-      studyHabits.studyHoursLog?.find((log) => log.date === todayStr)?.hours ||
-      0;
-
-    const defaultPrompt = `You are an AI study assistant for Computer Engineering and Information Technology students, focusing on subjects like programming, operating systems, AI/ML, networking, and web development. Based on the following incomplete tasks (completed: false): ${JSON.stringify(
-      filteredTasks
-    )} and study habits: ${JSON.stringify(
-      studyHabits
-    )}, generate a study suggestion for today (${todayStr}). 
-
-**Instructions:**
-- Only include tasks due today or upcoming (not overdue).
-- If there are no incomplete tasks, provide a concise general study tip (1-2 sentences) related to CE/IT fields instead of fabricating tasks.
-- Use the exact priority values from the task data: "High", "Medium", "Low".
-- Always include a "Habits" section with:
-  - Total study hours for today: Use the value ${todayStudyHours} and the word "hour" (even for plural).
-  - Current streak: Use the exact value ${
-    studyHabits.streak || 0
-  } with "day" (add "s" if streak > 1).
-  - A short motivational message about consistency (1 sentence).
-- End with this exact motivational message: "Your dedication and consistency will lead you to success in CE and IT field. Keep pushing forward and remember that every hour you invest in learning is a step closer to achieving your goals."
-
-**Format (use this structure exactly, even if sections are empty):**
-- High Priority:
-  - [Task title] (Hours: [hours], Due: [due date])
-  - None (if no tasks)
-- Medium Priority:
-  - [Task title] (Hours: [hours], Due: [due date])
-  - None (if no tasks)
-- Low Priority:
-  - [Task title] (Hours: [hours], Due: [due date])
-  - None (if no tasks)
-- General Study Tip (only if no tasks):
-  - [A study tip related to CE/IT field]
-- Habits:
-  - Total study hours for today: [hours] hour
-  - Your current streak is [streak] day(s)
-  - [Motivational message about consistency]
-
-**Example (if no tasks):**
-- High Priority:
-  - None
-- Medium Priority:
-  - None
-- Low Priority:
-  - None
-- General Study Tip:
-  - Practice writing HEART queries on a platform like LeetCode to strengthen your database skills.
-- Habits:
-  - Total study hours for today: 1 hour
-  - Your current streak is 0 day
-  - Keep consistent to build your streak and achieve your goals!
-Your dedication and consistency will lead you to success in CE and IT field. Keep pushing forward and remember that every hour you invest in learning is a step closer to achieving your goals.`;
-
-    // Use customPrompt if provided, otherwise use defaultPrompt
-    const promptText = customPrompt || defaultPrompt;
-
-    // List of models to try (in order of preference)
-    const models = [
-      "mistralai/Mixtral-8x7B-Instruct-v0.1", // Primary model
-      "google/flan-t5-large", // Fallback model
-      "distilgpt2", // Additional fallback
-    ];
-
-    let suggestion = null;
-    let errorMessage = null;
-    let usedModel = null;
-
-    for (const model of models) {
+    let suggestion;
+    
+    // For study tips specifically, use our predefined tips directly
+    // This is more reliable than trying to use the API which is returning empty responses
+    if (isStudyTipRequest) {
+      console.log("Using predefined study tip for reliable response");
+      suggestion = predefinedStudyTips[Math.floor(Math.random() * predefinedStudyTips.length)];
+    } else {
+      // For regular suggestions (not study tips), try the Hugging Face API first
       try {
-        console.log(`Attempting to use model: ${model}`);
-        const response = await fetch(
-          `https://api-inference.huggingface.co/models/${model}`,
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${process.env.HUGGINGFACE_API_KEY}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              inputs: promptText,
-              parameters: {
-                max_length: 300,
-                temperature: 0.5,
-                top_p: 0.9,
-              },
-            }),
-          }
-        );
-
-        // Check if response is JSON
-        const contentType = response.headers.get("content-type");
-        if (!contentType || !contentType.includes("application/json")) {
-          const text = await response.text();
-          throw new Error(
-            `Invalid response from Hugging Face API (model: ${model}): ${text}`
-          );
-        }
-
-        const data = await response.json();
-        if (data.error) {
-          throw new Error(
-            `Hugging Face API error (model: ${model}): ${data.error}`
-          );
-        }
-
-        suggestion = data[0].generated_text;
-        suggestion = suggestion.replace(promptText, "").trim();
-        usedModel = model;
-        console.log(
-          `Successfully generated suggestion using model: ${usedModel}`
-        );
-        break; // Exit loop if successful
+        console.log("Attempting to generate personalized suggestion from Hugging Face API");
+        suggestion = await getHuggingFaceSuggestion(generateDefaultPrompt(tasks, studyHabits));
+        console.log("Successfully generated suggestion from Hugging Face API");
       } catch (error) {
-        errorMessage = error.message;
-        continue; // Try the next model
+        console.log("Falling back to local generation:", error.message);
+        
+        // For regular suggestions, use local generation
+        const today = new Date();
+        const todayStr = today.toISOString().split("T")[0]; // YYYY-MM-DD in IST
+        const filteredTasks = tasks.filter((task) => {
+          const isNotCompleted = !task.completed;
+          const isDueTodayOrUpcoming = new Date(task.dueDate) >= new Date(todayStr);
+          return isNotCompleted && isDueTodayOrUpcoming;
+        });
+        
+        // Get today's study hours from studyHabits
+        const todayStudyHours =
+          studyHabits.studyHoursLog?.find((log) => log.date === todayStr)?.hours || 0;
+            
+        suggestion = generateFallbackSuggestion(filteredTasks, studyHabits, todayStudyHours, todayStr);
+        console.log("Generated local fallback suggestion");
       }
     }
 
-    if (!suggestion) {
-      throw new Error(
-        errorMessage || "No available models to generate suggestion"
-      );
-    }
+    // Add debugging to see what's being sent to the frontend
+    console.log("Formatted suggestion before sending to frontend:", suggestion);
 
-    // Skip validation for customPrompt requests
-    if (!customPrompt) {
+    // Skip validation for customPrompt requests or if it's a study tip
+    if (!customPrompt && !isStudyTipRequest) {
+      const today = new Date();
+      const todayStr = today.toISOString().split("T")[0]; // YYYY-MM-DD in IST
+      const todayStudyHours =
+        studyHabits.studyHoursLog?.find((log) => log.date === todayStr)?.hours || 0;
+      
       const requiredMotivationalMessage =
         "Your dedication and consistency will lead you to success in CE and IT field. Keep pushing forward and remember that every hour you invest in learning is a step closer to achieving your goals.";
       if (!suggestion.includes(requiredMotivationalMessage)) {
@@ -459,6 +462,12 @@ Your dedication and consistency will lead you to success in CE and IT field. Kee
         );
       }
 
+      const filteredTasks = tasks.filter((task) => {
+        const isNotCompleted = !task.completed;
+        const isDueTodayOrUpcoming = new Date(task.dueDate) >= new Date(todayStr);
+        return isNotCompleted && isDueTodayOrUpcoming;
+      });
+      
       if (
         filteredTasks.length === 0 &&
         !suggestion.includes("- General Study Tip:")
@@ -484,6 +493,106 @@ Your dedication and consistency will lead you to success in CE and IT field. Kee
       .json({ error: "Failed to generate AI suggestion: " + error.message });
   }
 });
+
+// Function to generate the default prompt for Hugging Face API
+function generateDefaultPrompt(tasks, studyHabits) {
+  const today = new Date();
+  const todayStr = today.toISOString().split("T")[0]; // YYYY-MM-DD in IST
+  
+  // Filter tasks to only include incomplete tasks due today or upcoming
+  const filteredTasks = tasks.filter((task) => {
+    const isNotCompleted = !task.completed;
+    const isDueTodayOrUpcoming = new Date(task.dueDate) >= new Date(todayStr);
+    return isNotCompleted && isDueTodayOrUpcoming;
+  });
+  
+  // Get today's study hours from studyHabits
+  const todayStudyHours =
+    studyHabits.studyHoursLog?.find((log) => log.date === todayStr)?.hours || 0;
+  
+  return `Create a study plan for today based on this information:
+Tasks: ${JSON.stringify(filteredTasks)}
+Study habits: ${JSON.stringify(studyHabits)}
+Today's date: ${todayStr}
+Today's study hours: ${todayStudyHours}
+Current streak: ${studyHabits.streak || 0} days
+
+Format the response with these sections:
+- High Priority tasks
+- Medium Priority tasks 
+- Low Priority tasks
+- Study tip
+- Habits information
+- End with a motivational message`;
+}
+
+// Function to generate a fallback suggestion when API calls fail
+function generateFallbackSuggestion(tasks, studyHabits, todayStudyHours, todayStr) {
+  const actualStreak = studyHabits.streak || 0;
+  
+  // Check if there are any tasks
+  if (tasks.length === 0) {
+    return `- High Priority:
+  - None
+- Medium Priority:
+  - None
+- Low Priority:
+  - None
+- General Study Tip:
+  - Practice writing SQL queries on a platform like LeetCode to strengthen your database skills.
+- Habits:
+  - Total study hours for today: ${todayStudyHours} hour
+  - Your current streak is ${actualStreak} day${actualStreak !== 1 ? "s" : ""}
+  - Keep consistent to build your streak and achieve your goals!
+Your dedication and consistency will lead you to success in CE and IT field. Keep pushing forward and remember that every hour you invest in learning is a step closer to achieving your goals.`;
+  }
+  
+  // If there are tasks, organize them by priority
+  const highPriorityTasks = tasks.filter(task => task.priority === "High");
+  const mediumPriorityTasks = tasks.filter(task => task.priority === "Medium");
+  const lowPriorityTasks = tasks.filter(task => task.priority === "Low");
+  
+  let suggestion = "";
+  
+  // Add high priority tasks
+  suggestion += "- High Priority:\n";
+  if (highPriorityTasks.length > 0) {
+    highPriorityTasks.forEach(task => {
+      suggestion += `  - ${task.title} (Hours: ${task.hours || 0}, Due: ${task.dueDate})\n`;
+    });
+  } else {
+    suggestion += "  - None\n";
+  }
+  
+  // Add medium priority tasks
+  suggestion += "- Medium Priority:\n";
+  if (mediumPriorityTasks.length > 0) {
+    mediumPriorityTasks.forEach(task => {
+      suggestion += `  - ${task.title} (Hours: ${task.hours || 0}, Due: ${task.dueDate})\n`;
+    });
+  } else {
+    suggestion += "  - None\n";
+  }
+  
+  // Add low priority tasks
+  suggestion += "- Low Priority:\n";
+  if (lowPriorityTasks.length > 0) {
+    lowPriorityTasks.forEach(task => {
+      suggestion += `  - ${task.title} (Hours: ${task.hours || 0}, Due: ${task.dueDate})\n`;
+    });
+  } else {
+    suggestion += "  - None\n";
+  }
+  
+  // Add habits section
+  suggestion += `- Habits:
+  - Total study hours for today: ${todayStudyHours} hour
+  - Your current streak is ${actualStreak} day${actualStreak !== 1 ? "s" : ""}
+  - Keep consistent to build your streak and achieve your goals!
+Your dedication and consistency will lead you to success in CE and IT field. Keep pushing forward and remember that every hour you invest in learning is a step closer to achieving your goals.`;
+
+  return suggestion;
+}
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

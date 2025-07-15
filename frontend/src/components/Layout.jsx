@@ -386,16 +386,18 @@ function Layout() {
     });
   };
 
-  const getStudyTips = async () => {
-    setIsAiLoading(true);
-    setAiSuggestion("Loading a fresh study tip...");
-    setAiSuggestionType("loading");
-    try {
-      const timestamp = Date.now();
-      const prompt = {
-        tasks: [],
-        studyStats: {},
-        customPrompt: `You are an AI study assistant for students across all subjects, focusing on improving learning efficiency. Generate a concise study tip (2-3 sentences, max 50 words) that is clear, actionable, and applicable to any subject. Format the tip as follows:
+  // Find this section in your Layout.jsx file and replace it with this updated version:
+
+const getStudyTips = async () => {
+  setIsAiLoading(true);
+  setAiSuggestion("Loading a fresh study tip...");
+  setAiSuggestionType("loading");
+  try {
+    const timestamp = Date.now();
+    const prompt = {
+      tasks: [],
+      studyStats: {},
+      customPrompt: `Generate a concise study tip (2-3 sentences, max 50 words) that is clear, actionable, and applicable to any subject. Format the tip as follows:
 
 Here's a study tip for students:
 
@@ -416,39 +418,48 @@ Here's a study tip for students:
 - Enhance memory by reviewing notes 1 day, 1 week, and 1 month after learning, using spaced repetition. This strengthens recall, per cognitive science. Best for exam prep over weeks.
 
 (Request ID: ${timestamp})`,
-      };
-      const response = await getStudySuggestion(prompt);
+    };
+    const response = await getStudySuggestion(prompt);
 
-      console.log("Study Tip API Response:", response);
+    console.log("Study Tip API Response:", response);
 
-      let studyTip = "Failed to fetch a valid study tip.";
-      if (typeof response === "string" && response.trim()) {
-        studyTip = response.trim();
-        studyTip = studyTip.replace(/^\d+\.\s*/, "");
-        if (!studyTip.startsWith("Here's a study tip for students:")) {
-          studyTip = `Here's a study tip for students:\n\n- ${studyTip}`;
-        }
-      } else if (Array.isArray(response) && response.length > 0) {
-        studyTip =
-          response.find((item) => typeof item === "string" && item.trim()) ||
-          studyTip;
-        studyTip = studyTip.trim();
-        studyTip = studyTip.replace(/^\d+\.\s*/, "");
-        if (!studyTip.startsWith("Here's a study tip for students:")) {
-          studyTip = `Here's a study tip for students:\n\n- ${studyTip}`;
-        }
+    let studyTip = "Failed to fetch a valid study tip.";
+    if (typeof response === "string" && response.trim()) {
+      studyTip = response.trim();
+      // Clean up any numbering
+      studyTip = studyTip.replace(/^\d+\.\s*/, "");
+      // Ensure it starts with the expected format
+      if (!studyTip.toLowerCase().includes("here's a study tip")) {
+        studyTip = `Here's a study tip for students:\n\n- ${studyTip}`;
       }
-
-      setAiSuggestion(studyTip);
-      setAiSuggestionType("studyTip");
-    } catch (error) {
-      console.error("Error fetching study tip:", error);
-      setAiSuggestion("Failed to fetch study tip. Please try again later.");
-      setAiSuggestionType("error");
-    } finally {
-      setIsAiLoading(false);
+    } else if (Array.isArray(response) && response.length > 0) {
+      studyTip =
+        response.find((item) => typeof item === "string" && item.trim()) ||
+        studyTip;
+      studyTip = studyTip.trim();
+      studyTip = studyTip.replace(/^\d+\.\s*/, "");
+      if (!studyTip.toLowerCase().includes("here's a study tip")) {
+        studyTip = `Here's a study tip for students:\n\n- ${studyTip}`;
+      }
     }
-  };
+
+    // Extra validation to ensure we never display the error message when we have content
+    if (studyTip === "Failed to fetch a valid study tip." && typeof response === "string" && response.trim().length > 10) {
+      // If we have some substantial content but it didn't match our format expectations,
+      // use it anyway with proper formatting
+      studyTip = `Here's a study tip for students:\n\n- ${response.trim()}`;
+    }
+
+    setAiSuggestion(studyTip);
+    setAiSuggestionType("studyTip");
+  } catch (error) {
+    console.error("Error fetching study tip:", error);
+    setAiSuggestion("Failed to fetch study tip. Please try again later.");
+    setAiSuggestionType("error");
+  } finally {
+    setIsAiLoading(false);
+  }
+};
 
   const generateSchedule = async () => {
     setIsAiLoading(true);

@@ -25,6 +25,9 @@ export const getStudySuggestion = async ({
       throw new Error(data.error);
     }
 
+    // Add debugging log to see the raw response
+    console.log("Raw API response:", data.suggestion);
+    
     return data.suggestion;
   } catch (error) {
     console.error("Error getting AI suggestion:", error);
