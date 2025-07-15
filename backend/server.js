@@ -1,3 +1,5 @@
+// server.js with fixed generateSchedule function
+
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
@@ -122,6 +124,20 @@ const predefinedStudyTips = [
   "Here's a study tip for students:\n\n- Use the Feynman Technique: Explain a complex computing concept in simple terms as if teaching a beginner. This reveals gaps in your understanding and reinforces your knowledge of the material.",
   "Here's a study tip for students:\n\n- Alternate between different subjects or problem types in a single study session. This interleaving approach forces your brain to retrieve different strategies and strengthens overall learning more than blocked practice.",
   "Here's a study tip for students:\n\n- Take brief, regular movement breaks during study sessions. Physical activity increases blood flow to the brain, improving cognitive function. Even a 5-minute walk can refresh your mind for tackling difficult coding problems."
+];
+
+// Predefined motivational messages for progress reports
+const predefinedMotivationalMessages = [
+  "Your dedication and consistency will lead you to success in CE and IT field. Keep pushing forward and remember that every hour you invest in learning is a step closer to achieving your goals.",
+  "Small steps every day add up to big results over time. Keep building your knowledge consistently!",
+  "The effort you put into your studies today will shape your professional future tomorrow. Keep up the great work!",
+  "Persistence is the key to mastering complex technical topics. Your consistent effort is building a strong foundation for success.",
+  "Every study session brings you closer to your goals. Your dedication today will open doors to opportunities tomorrow.",
+  "Learning to code is a journey, not a destination. Each day of practice makes you stronger and more skilled.",
+  "Great job on your progress today! Remember that consistent small improvements compound into mastery over time.",
+  "Your commitment to learning is inspiring. Keep nurturing your technical skills, and you'll achieve remarkable results.",
+  "Success in tech comes from consistent practice and problem-solving. You're building those skills every day!",
+  "The road to becoming a great developer is built one study session at a time. You're making excellent progress!"
 ];
 
 // API Endpoints
@@ -346,19 +362,69 @@ app.post("/api/ai-suggestion", async (req, res) => {
       userData?.cachedSuggestions &&
       userData.cachedSuggestions.get(cacheKey)
     ) {
+      // Add artificial delay for cache hit as well to maintain consistent UX
+      await new Promise(resolve => setTimeout(resolve, 1000));
       return res.json({ suggestion: userData.cachedSuggestions.get(cacheKey) });
     }
 
     // Check if this is a study tip request (based on the customPrompt content)
     const isStudyTipRequest = customPrompt && customPrompt.includes("Generate a concise study tip");
+    
+    // Check if this is a progress report request
+    const isProgressReport = customPrompt && customPrompt.includes("Generate a list of 10 short motivational messages");
 
     let suggestion;
+    
+    // Add a consistent delay to simulate processing time (improves UX)
+    await new Promise(resolve => setTimeout(resolve, 1200)); // Increased delay to 1.2 seconds
     
     // For study tips specifically, use our predefined tips directly
     // This is more reliable than trying to use the API which is returning empty responses
     if (isStudyTipRequest) {
       console.log("Using predefined study tip for reliable response");
       suggestion = predefinedStudyTips[Math.floor(Math.random() * predefinedStudyTips.length)];
+    } else if (isProgressReport) {
+      // For progress reports, make sure we include a motivational message
+      try {
+        console.log("Generating progress report");
+        
+        // Get the progress data from the request
+        const today = new Date();
+        const todayStr = today.toISOString().split("T")[0]; // YYYY-MM-DD in IST
+        const todayStudyHours =
+          studyHabits.studyHoursLog?.find((log) => log.date === todayStr)?.hours || 0;
+        const tasksCompletedToday = tasks.filter(
+          (task) => task.completed && task.completedDate === todayStr
+        );
+        const totalTasksCompletedToday = tasksCompletedToday.length;
+        const highPriorityCompleted = tasksCompletedToday.filter(
+          (task) => task.priority === "High"
+        ).length;
+        const mediumPriorityCompleted = tasksCompletedToday.filter(
+          (task) => task.priority === "Medium"
+        ).length;
+        const lowPriorityCompleted = tasksCompletedToday.filter(
+          (task) => task.priority === "Low"
+        ).length;
+        
+        // Select a random motivational message
+        const motivationalMessage = predefinedMotivationalMessages[
+          Math.floor(Math.random() * predefinedMotivationalMessages.length)
+        ];
+        
+        // Format the progress report with the motivational message - DO NOT include a date in the motivational message
+        suggestion = `Here's your progress for today (${todayStr}):\n\n- Total Study Hours Today: ${todayStudyHours} hour${todayStudyHours !== 1 ? "s" : ""}\n- Tasks Completed Today: ${totalTasksCompletedToday}\n- High Priority Tasks Completed Today: ${highPriorityCompleted}\n- Medium Priority Tasks Completed Today: ${mediumPriorityCompleted}\n- Low Priority Tasks Completed Today: ${lowPriorityCompleted}\n\n${motivationalMessage}`;
+        
+        console.log("Generated progress report successfully");
+      } catch (error) {
+        console.log("Error generating progress report:", error.message);
+        
+        // Fallback motivational message if there's an error
+        const motivationalMessage = predefinedMotivationalMessages[0];
+        const today = new Date();
+        const todayStr = today.toISOString().split("T")[0]; // YYYY-MM-DD in IST
+        suggestion = `Here's your progress for today (${todayStr}):\n\n- Total Study Hours Today: 0 hours\n- Tasks Completed Today: 0\n- High Priority Tasks Completed Today: 0\n- Medium Priority Tasks Completed Today: 0\n- Low Priority Tasks Completed Today: 0\n\n${motivationalMessage}`;
+      }
     } else {
       // For regular suggestions (not study tips), try the Hugging Face API first
       try {

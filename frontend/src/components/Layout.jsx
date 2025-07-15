@@ -1,3 +1,4 @@
+// frontend/src/components/Layout.jsx
 import React, { useState, useEffect } from "react";
 import Header from "./layout/Header";
 import Navigation from "./layout/Navigation";
@@ -162,7 +163,7 @@ function Layout() {
         setUnlockedThemes(data.unlockedThemes || ["Light Mode"]);
 
         const today = getLocalDateString(new Date());
-        const { lastActiveDate, streak, lastStreakUpdate } = fetchedStats;
+        const { lastActiveDate, lastStreakUpdate } = fetchedStats;
 
         let newStats = { ...fetchedStats };
         if (lastStreakUpdate !== today) {
@@ -205,9 +206,8 @@ function Layout() {
           setStudyStats(newStats);
         }
 
-        const lastFetchTimestamp = localStorage.getItem("lastFetchTimestamp");
-        const currentTimestamp = Date.now();
-        localStorage.setItem("lastFetchTimestamp", currentTimestamp.toString());
+        // Direct store of timestamp without using a variable
+        localStorage.setItem("lastFetchTimestamp", Date.now().toString());
 
         setTimeout(async () => {
           const incompleteTasks = fetchedTasks.filter(
@@ -386,7 +386,7 @@ function Layout() {
     });
   };
 
-  // Find this section in your Layout.jsx file and replace it with this updated version:
+// Updated getStudyTips and generateSchedule functions for Layout.jsx
 
 const getStudyTips = async () => {
   setIsAiLoading(true);
@@ -461,73 +461,85 @@ Here's a study tip for students:
   }
 };
 
-  const generateSchedule = async () => {
-    setIsAiLoading(true);
-    setAiSuggestion("Generating your progress report...");
-    setAiSuggestionType("loading");
-    try {
-      const today = getLocalDateString(new Date());
-      const todayStudyHours =
-        studyStats.studyHoursLog.find((log) => log.date === today)?.hours || 0;
-      const tasksCompletedToday = tasks.filter(
-        (task) => task.completed && task.completedDate === today
-      );
-      const totalTasksCompletedToday = tasksCompletedToday.length;
-      const highPriorityCompleted = tasksCompletedToday.filter(
-        (task) => task.priority === "High"
-      ).length;
-      const mediumPriorityCompleted = tasksCompletedToday.filter(
-        (task) => task.priority === "Medium"
-      ).length;
-      const lowPriorityCompleted = tasksCompletedToday.filter(
-        (task) => task.priority === "Low"
-      ).length;
+const generateSchedule = async () => {
+  setIsAiLoading(true);
+  setAiSuggestion("Generating your progress report...");
+  setAiSuggestionType("loading");
+  try {
+    const today = getLocalDateString(new Date());
+    const todayStudyHours =
+      studyStats.studyHoursLog.find((log) => log.date === today)?.hours || 0;
+    const tasksCompletedToday = tasks.filter(
+      (task) => task.completed && task.completedDate === today
+    );
+    const totalTasksCompletedToday = tasksCompletedToday.length;
+    const highPriorityCompleted = tasksCompletedToday.filter(
+      (task) => task.priority === "High"
+    ).length;
+    const mediumPriorityCompleted = tasksCompletedToday.filter(
+      (task) => task.priority === "Medium"
+    ).length;
+    const lowPriorityCompleted = tasksCompletedToday.filter(
+      (task) => task.priority === "Low"
+    ).length;
 
-      const timestamp = Date.now();
-      const prompt = {
-        tasks: [],
-        studyStats: {
-          todayStudyHours,
-          totalTasksCompletedToday,
-        },
-        customPrompt: `Generate a list of 10 short motivational messages (each 1-2 sentences, max 30 words) for a student who has studied for ${todayStudyHours} hours today and completed ${totalTasksCompletedToday} tasks. Each message should be unique, encouraging, and focused on their progress in their studies. Format each message on a new line without numbering or bullet points. (Request ID: ${timestamp})`,
-      };
-      const response = await getStudySuggestion(prompt);
+    const timestamp = Date.now();
+    const prompt = {
+      tasks: [],
+      studyStats: {
+        todayStudyHours,
+        totalTasksCompletedToday,
+      },
+      customPrompt: `Generate a list of 10 short motivational messages (each 1-2 sentences, max 30 words) for a student who has studied for ${todayStudyHours} hours today and completed ${totalTasksCompletedToday} tasks. Each message should be unique, encouraging, and focused on their progress in their studies. Format each message on a new line without numbering or bullet points. (Request ID: ${timestamp})`,
+    };
+    const response = await getStudySuggestion(prompt);
 
-      let motivationalMessage;
-      if (typeof response === "string") {
-        const messages = response
-          .split("\n")
-          .filter((msg) => msg.trim() !== "");
-        motivationalMessage =
-          messages.length > 0
-            ? messages[0].replace(/^"(.*)"$/, "$1")
-            : "Keep up the great effort in your studies!";
-      } else if (Array.isArray(response)) {
-        motivationalMessage =
-          response.length > 0
-            ? response[0].replace(/^"(.*)"$/, "$1")
-            : "Keep up the great effort in your studies!";
-      } else {
-        motivationalMessage = "Keep up the great effort in your studies!";
-      }
-
-      motivationalMessage = motivationalMessage.replace(/^"(.*)"$/, "$1");
-      motivationalMessage = motivationalMessage.replace(/^\d+\.\s*/, "").trim();
-
-      const progressMessage = `Here’s your progress for today (${today}):\n\n- Total Study Hours Today: ${todayStudyHours} hour${todayStudyHours !== 1 ? "s" : ""}\n- Tasks Completed Today: ${totalTasksCompletedToday}\n- High Priority Tasks Completed Today: ${highPriorityCompleted}\n- Medium Priority Tasks Completed Today: ${mediumPriorityCompleted}\n- Low Priority Tasks Completed Today: ${lowPriorityCompleted}\n\n${motivationalMessage}`;
-      setAiSuggestion(progressMessage);
-      setAiSuggestionType("progressReport");
-    } catch (error) {
-      console.error("Error generating progress report:", error);
-      setAiSuggestion(
-        "Failed to generate progress report. Please try again later."
-      );
-      setAiSuggestionType("error");
-    } finally {
-      setIsAiLoading(false);
+    let motivationalMessage;
+    if (typeof response === "string") {
+      const messages = response
+        .split("\n")
+        .filter((msg) => msg.trim() !== "");
+      motivationalMessage =
+        messages.length > 0
+          ? messages[0].replace(/^"(.*)"$/, "$1")
+          : "Keep up the great effort in your studies!";
+    } else if (Array.isArray(response)) {
+      motivationalMessage =
+        response.length > 0
+          ? response[0].replace(/^"(.*)"$/, "$1")
+          : "Keep up the great effort in your studies!";
+    } else {
+      motivationalMessage = "Keep up the great effort in your studies!";
     }
-  };
+
+    motivationalMessage = motivationalMessage.replace(/^"(.*)"$/, "$1");
+    motivationalMessage = motivationalMessage.replace(/^\d+\.\s*/, "").trim();
+
+    // Make sure the response isn't just "- High Priority:" or another header
+    if (response === "- High Priority:" || 
+        response.trim().startsWith("- High Priority:") || 
+        response.trim().startsWith("Here's your progress")) {
+      motivationalMessage = "Your dedication and consistency will lead you to success in CE and IT field. Keep pushing forward and remember that every hour you invest in learning is a step closer to achieving your goals.";
+    }
+
+    // Ensure we don't accidentally include the date twice
+    if (motivationalMessage.includes("progress for today")) {
+      motivationalMessage = "Your commitment to learning is inspiring. Keep nurturing your technical skills, and you'll achieve remarkable results.";
+    }
+
+    const progressMessage = `Here's your progress for today (${today}):\n\n- Total Study Hours Today: ${todayStudyHours} hour${todayStudyHours !== 1 ? "s" : ""}\n- Tasks Completed Today: ${totalTasksCompletedToday}\n- High Priority Tasks Completed Today: ${highPriorityCompleted}\n- Medium Priority Tasks Completed Today: ${mediumPriorityCompleted}\n- Low Priority Tasks Completed Today: ${lowPriorityCompleted}\n\n${motivationalMessage}`;
+    setAiSuggestion(progressMessage);
+    setAiSuggestionType("progressReport");
+  } catch (error) {
+    console.error("Error generating progress report:", error);
+    setAiSuggestion(
+      "Failed to generate progress report. Please try again later."
+    );
+    setAiSuggestionType("error");
+  } finally {
+    setIsAiLoading(false);
+  }
+};
 
   const addTask = (newTask) => {
     const task = {
@@ -656,6 +668,7 @@ Here's a study tip for students:
     );
   };
 
+  // Fix for useEffect with missing dependencies
   useEffect(() => {
     if (studyStats.streak >= 7 && !badges.includes("Streak Star")) {
       let newBadges = [...badges, "Streak Star"];
@@ -667,7 +680,7 @@ Here's a study tip for students:
       toast.success("🏆 Badge Earned: Streak Star!");
       toast.success("🎉 +50 Points for 7-Day Streak!");
     }
-  }, [studyStats.streak]);
+  }, [studyStats.streak, badges, points]); // Added missing dependencies
 
   const nextTheme = getNextTheme();
 

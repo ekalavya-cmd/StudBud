@@ -1,8 +1,9 @@
+// frontend/src/components/CalendarPage.jsx
 import React, { useState, useEffect } from "react";
 import Calendar from "react-calendar";
 import {
   CheckCircle,
-  Circle,
+  // Removed unused Circle import
   Calendar as CalendarIcon,
   PlusCircle,
 } from "lucide-react";
