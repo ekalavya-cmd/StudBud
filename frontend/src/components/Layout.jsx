@@ -386,18 +386,20 @@ function Layout() {
     });
   };
 
-// Updated getStudyTips and generateSchedule functions for Layout.jsx
+  // Updated getStudyTips and generateSchedule functions for Layout.jsx
 
-const getStudyTips = async () => {
-  setIsAiLoading(true);
-  setAiSuggestion("Loading a fresh study tip...");
-  setAiSuggestionType("loading");
-  try {
-    const timestamp = Date.now();
-    const prompt = {
-      tasks: [],
-      studyStats: {},
-      customPrompt: `Generate a concise study tip (2-3 sentences, max 50 words) that is clear, actionable, and applicable to any subject. Format the tip as follows:
+  // Complete and corrected Layout.jsx functions
+
+  const getStudyTips = async () => {
+    setIsAiLoading(true);
+    setAiSuggestion("Loading a fresh study tip...");
+    setAiSuggestionType("loading");
+    try {
+      const timestamp = Date.now();
+      const prompt = {
+        tasks: [],
+        studyStats: {},
+        customPrompt: `Generate a concise study tip (2-3 sentences, max 50 words) that is clear, actionable, and applicable to any subject. Format the tip as follows:
 
 Here's a study tip for students:
 
@@ -418,128 +420,187 @@ Here's a study tip for students:
 - Enhance memory by reviewing notes 1 day, 1 week, and 1 month after learning, using spaced repetition. This strengthens recall, per cognitive science. Best for exam prep over weeks.
 
 (Request ID: ${timestamp})`,
-    };
-    const response = await getStudySuggestion(prompt);
+      };
+      const response = await getStudySuggestion(prompt);
 
-    console.log("Study Tip API Response:", response);
-
-    let studyTip = "Failed to fetch a valid study tip.";
-    if (typeof response === "string" && response.trim()) {
-      studyTip = response.trim();
-      // Clean up any numbering
-      studyTip = studyTip.replace(/^\d+\.\s*/, "");
-      // Ensure it starts with the expected format
-      if (!studyTip.toLowerCase().includes("here's a study tip")) {
-        studyTip = `Here's a study tip for students:\n\n- ${studyTip}`;
+      let studyTip = "Failed to fetch a valid study tip.";
+      if (typeof response === "string" && response.trim()) {
+        studyTip = response.trim();
+        // Clean up any numbering
+        studyTip = studyTip.replace(/^\d+\.\s*/, "");
+        // Ensure it starts with the expected format
+        if (!studyTip.toLowerCase().includes("here's a study tip")) {
+          studyTip = `Here's a study tip for students:\n\n- ${studyTip}`;
+        }
+      } else if (Array.isArray(response) && response.length > 0) {
+        studyTip =
+          response.find((item) => typeof item === "string" && item.trim()) ||
+          studyTip;
+        studyTip = studyTip.trim();
+        studyTip = studyTip.replace(/^\d+\.\s*/, "");
+        if (!studyTip.toLowerCase().includes("here's a study tip")) {
+          studyTip = `Here's a study tip for students:\n\n- ${studyTip}`;
+        }
       }
-    } else if (Array.isArray(response) && response.length > 0) {
-      studyTip =
-        response.find((item) => typeof item === "string" && item.trim()) ||
-        studyTip;
-      studyTip = studyTip.trim();
-      studyTip = studyTip.replace(/^\d+\.\s*/, "");
-      if (!studyTip.toLowerCase().includes("here's a study tip")) {
-        studyTip = `Here's a study tip for students:\n\n- ${studyTip}`;
+
+      // Extra validation to ensure we never display the error message when we have content
+      if (
+        studyTip === "Failed to fetch a valid study tip." &&
+        typeof response === "string" &&
+        response.trim().length > 10
+      ) {
+        // If we have some substantial content but it didn't match our format expectations,
+        // use it anyway with proper formatting
+        studyTip = `Here's a study tip for students:\n\n- ${response.trim()}`;
       }
+
+      // Filter out any tech-specific content
+      if (
+        studyTip.toLowerCase().includes("coding") ||
+        studyTip.toLowerCase().includes("programming") ||
+        studyTip.toLowerCase().includes("developer") ||
+        studyTip.toLowerCase().includes("tech") ||
+        studyTip.toLowerCase().includes("it field")
+      ) {
+        studyTip =
+          "Here's a study tip for students:\n\n- Create mind maps to visualize connections between different concepts. This spatial organization helps your brain form meaningful associations and see the bigger picture in complex subjects, from sciences to humanities.";
+      }
+
+      setAiSuggestion(studyTip);
+      setAiSuggestionType("studyTip");
+    } catch (error) {
+      setAiSuggestion("Failed to fetch study tip. Please try again later.");
+      setAiSuggestionType("error");
+    } finally {
+      setIsAiLoading(false);
     }
+  };
 
-    // Extra validation to ensure we never display the error message when we have content
-    if (studyTip === "Failed to fetch a valid study tip." && typeof response === "string" && response.trim().length > 10) {
-      // If we have some substantial content but it didn't match our format expectations,
-      // use it anyway with proper formatting
-      studyTip = `Here's a study tip for students:\n\n- ${response.trim()}`;
+  const generateSchedule = async () => {
+    setIsAiLoading(true);
+    setAiSuggestion("Generating your progress report...");
+    setAiSuggestionType("loading");
+    try {
+      const today = getLocalDateString(new Date());
+      const todayStudyHours =
+        studyStats.studyHoursLog.find((log) => log.date === today)?.hours || 0;
+      const tasksCompletedToday = tasks.filter(
+        (task) => task.completed && task.completedDate === today
+      );
+      const totalTasksCompletedToday = tasksCompletedToday.length;
+      const highPriorityCompleted = tasksCompletedToday.filter(
+        (task) => task.priority === "High"
+      ).length;
+      const mediumPriorityCompleted = tasksCompletedToday.filter(
+        (task) => task.priority === "Medium"
+      ).length;
+      const lowPriorityCompleted = tasksCompletedToday.filter(
+        (task) => task.priority === "Low"
+      ).length;
+
+      const timestamp = Date.now();
+      const prompt = {
+        tasks: [],
+        studyStats: {
+          todayStudyHours,
+          totalTasksCompletedToday,
+          streak: studyStats.streak || 0,
+          totalHours: studyStats.totalHours || 0,
+          completedTasks: tasks.filter((task) => task.completed).length,
+        },
+        customPrompt: `Generate a list of 10 short motivational messages (each 1-2 sentences, max 30 words) for a student who has studied for ${todayStudyHours} hours today and completed ${totalTasksCompletedToday} tasks. The messages should be applicable to students in all fields, not just computing or IT. Each message should be unique, encouraging, and focused on their progress in their studies. Format each message on a new line without numbering or bullet points. (Request ID: ${timestamp})`,
+      };
+      const response = await getStudySuggestion(prompt);
+
+      let motivationalMessage;
+      if (typeof response === "string") {
+        const messages = response
+          .split("\n")
+          .filter((msg) => msg.trim() !== "");
+        motivationalMessage =
+          messages.length > 0
+            ? messages[0].replace(/^"(.*)"$/, "$1")
+            : "Keep up the great effort in your studies!";
+      } else if (Array.isArray(response)) {
+        motivationalMessage =
+          response.length > 0
+            ? response[0].replace(/^"(.*)"$/, "$1")
+            : "Keep up the great effort in your studies!";
+      } else {
+        motivationalMessage = "Keep up the great effort in your studies!";
+      }
+
+      motivationalMessage = motivationalMessage.replace(/^"(.*)"$/, "$1");
+      motivationalMessage = motivationalMessage.replace(/^\d+\.\s*/, "").trim();
+
+      // Make sure the response isn't just "- High Priority:" or another header
+      if (
+        response === "- High Priority:" ||
+        response.trim().startsWith("- High Priority:") ||
+        response.trim().startsWith("Here's your progress")
+      ) {
+        // Determine progress level based on stats
+        let progressCategory = "beginner";
+        const streak = studyStats.streak || 0;
+        const totalHours = studyStats.totalHours || 0;
+        const completedTasks = tasks.filter((task) => task.completed).length;
+
+        if (streak > 14 || totalHours > 50 || completedTasks > 30) {
+          progressCategory = "advanced";
+        } else if (streak > 5 || totalHours > 20 || completedTasks > 10) {
+          progressCategory = "intermediate";
+        }
+
+        // Use appropriate fallback message based on progress and today's activity
+        const noProgressToday =
+          todayStudyHours === 0 && totalTasksCompletedToday === 0;
+
+        if (noProgressToday) {
+          motivationalMessage =
+            "Starting your learning journey is often the hardest part. Remember that every expert was once a beginner, and your willingness to begin sets you apart. Take that first step today!";
+        } else if (progressCategory === "beginner") {
+          motivationalMessage =
+            "Your commitment to learning is impressive. These early steps build the foundation for all your future success, regardless of what field you're studying.";
+        } else if (progressCategory === "intermediate") {
+          motivationalMessage =
+            "The consistent effort you're showing in your studies demonstrates real dedication. This steady progress is exactly how lasting expertise is built in any discipline.";
+        } else {
+          // advanced
+          motivationalMessage =
+            "The depth of knowledge you're building through your sustained commitment to learning is remarkable. Few people achieve this level of dedication, and it will serve you well throughout your life and career.";
+        }
+      }
+
+      // Ensure we don't accidentally include the date twice
+      if (motivationalMessage.includes("progress for today")) {
+        motivationalMessage =
+          "Your commitment to learning is inspiring. Keep nurturing your skills and knowledge, and you'll achieve remarkable results in your field.";
+      }
+
+      // Filter out any references to specific fields like "tech" or "coding"
+      if (
+        motivationalMessage.includes("coding") ||
+        motivationalMessage.includes("programming") ||
+        motivationalMessage.includes("tech") ||
+        motivationalMessage.includes("IT") ||
+        motivationalMessage.includes("developer")
+      ) {
+        motivationalMessage =
+          "Your dedication to learning will open doors to opportunities in your field. Each study session builds valuable skills that will serve you throughout your career.";
+      }
+
+      const progressMessage = `Here's your progress for today (${today}):\n\n- Total Study Hours Today: ${todayStudyHours} hour${todayStudyHours !== 1 ? "s" : ""}\n- Tasks Completed Today: ${totalTasksCompletedToday}\n- High Priority Tasks Completed Today: ${highPriorityCompleted}\n- Medium Priority Tasks Completed Today: ${mediumPriorityCompleted}\n- Low Priority Tasks Completed Today: ${lowPriorityCompleted}\n\n${motivationalMessage}`;
+      setAiSuggestion(progressMessage);
+      setAiSuggestionType("progressReport");
+    } catch (error) {
+      setAiSuggestion(
+        "Failed to generate progress report. Please try again later."
+      );
+      setAiSuggestionType("error");
+    } finally {
+      setIsAiLoading(false);
     }
-
-    setAiSuggestion(studyTip);
-    setAiSuggestionType("studyTip");
-  } catch (error) {
-    console.error("Error fetching study tip:", error);
-    setAiSuggestion("Failed to fetch study tip. Please try again later.");
-    setAiSuggestionType("error");
-  } finally {
-    setIsAiLoading(false);
-  }
-};
-
-const generateSchedule = async () => {
-  setIsAiLoading(true);
-  setAiSuggestion("Generating your progress report...");
-  setAiSuggestionType("loading");
-  try {
-    const today = getLocalDateString(new Date());
-    const todayStudyHours =
-      studyStats.studyHoursLog.find((log) => log.date === today)?.hours || 0;
-    const tasksCompletedToday = tasks.filter(
-      (task) => task.completed && task.completedDate === today
-    );
-    const totalTasksCompletedToday = tasksCompletedToday.length;
-    const highPriorityCompleted = tasksCompletedToday.filter(
-      (task) => task.priority === "High"
-    ).length;
-    const mediumPriorityCompleted = tasksCompletedToday.filter(
-      (task) => task.priority === "Medium"
-    ).length;
-    const lowPriorityCompleted = tasksCompletedToday.filter(
-      (task) => task.priority === "Low"
-    ).length;
-
-    const timestamp = Date.now();
-    const prompt = {
-      tasks: [],
-      studyStats: {
-        todayStudyHours,
-        totalTasksCompletedToday,
-      },
-      customPrompt: `Generate a list of 10 short motivational messages (each 1-2 sentences, max 30 words) for a student who has studied for ${todayStudyHours} hours today and completed ${totalTasksCompletedToday} tasks. Each message should be unique, encouraging, and focused on their progress in their studies. Format each message on a new line without numbering or bullet points. (Request ID: ${timestamp})`,
-    };
-    const response = await getStudySuggestion(prompt);
-
-    let motivationalMessage;
-    if (typeof response === "string") {
-      const messages = response
-        .split("\n")
-        .filter((msg) => msg.trim() !== "");
-      motivationalMessage =
-        messages.length > 0
-          ? messages[0].replace(/^"(.*)"$/, "$1")
-          : "Keep up the great effort in your studies!";
-    } else if (Array.isArray(response)) {
-      motivationalMessage =
-        response.length > 0
-          ? response[0].replace(/^"(.*)"$/, "$1")
-          : "Keep up the great effort in your studies!";
-    } else {
-      motivationalMessage = "Keep up the great effort in your studies!";
-    }
-
-    motivationalMessage = motivationalMessage.replace(/^"(.*)"$/, "$1");
-    motivationalMessage = motivationalMessage.replace(/^\d+\.\s*/, "").trim();
-
-    // Make sure the response isn't just "- High Priority:" or another header
-    if (response === "- High Priority:" || 
-        response.trim().startsWith("- High Priority:") || 
-        response.trim().startsWith("Here's your progress")) {
-      motivationalMessage = "Your dedication and consistency will lead you to success in CE and IT field. Keep pushing forward and remember that every hour you invest in learning is a step closer to achieving your goals.";
-    }
-
-    // Ensure we don't accidentally include the date twice
-    if (motivationalMessage.includes("progress for today")) {
-      motivationalMessage = "Your commitment to learning is inspiring. Keep nurturing your technical skills, and you'll achieve remarkable results.";
-    }
-
-    const progressMessage = `Here's your progress for today (${today}):\n\n- Total Study Hours Today: ${todayStudyHours} hour${todayStudyHours !== 1 ? "s" : ""}\n- Tasks Completed Today: ${totalTasksCompletedToday}\n- High Priority Tasks Completed Today: ${highPriorityCompleted}\n- Medium Priority Tasks Completed Today: ${mediumPriorityCompleted}\n- Low Priority Tasks Completed Today: ${lowPriorityCompleted}\n\n${motivationalMessage}`;
-    setAiSuggestion(progressMessage);
-    setAiSuggestionType("progressReport");
-  } catch (error) {
-    console.error("Error generating progress report:", error);
-    setAiSuggestion(
-      "Failed to generate progress report. Please try again later."
-    );
-    setAiSuggestionType("error");
-  } finally {
-    setIsAiLoading(false);
-  }
-};
+  };
 
   const addTask = (newTask) => {
     const task = {

@@ -114,31 +114,61 @@ const UserData = mongoose.model("UserData", userDataSchema);
 
 // Predefined study tips to use as fallback
 const predefinedStudyTips = [
-  "Here's a study tip for students:\n\n- Use the Pomodoro Technique: Study for 25 minutes, then take a 5-minute break. This improves focus by working with your brain's natural attention cycles. Ideal for complex programming tasks.",
-  "Here's a study tip for students:\n\n- Create a dedicated study environment free from distractions. Your brain forms associations with physical spaces, making it easier to focus when you're in your designated study area. Perfect for deep technical learning.",
-  "Here's a study tip for students:\n\n- Practice active recall by testing yourself rather than just re-reading notes. Try explaining database concepts or algorithms out loud as if teaching someone else. This strengthens neural pathways and improves retention.",
-  "Here's a study tip for students:\n\n- Use spaced repetition for memorizing important concepts. Review material at increasing intervals (1 day, 3 days, 1 week, etc.). This technique is especially effective for remembering syntax rules and programming patterns.",
-  "Here's a study tip for students:\n\n- Break complex topics into smaller, manageable chunks. When learning a new programming language, master one concept before moving to the next. This prevents overwhelm and builds confidence through incremental success.",
-  "Here's a study tip for students:\n\n- Create mind maps to visualize connections between different computing concepts. This spatial organization helps your brain form meaningful associations and see the bigger picture in complex technical subjects.",
-  "Here's a study tip for students:\n\n- Set specific, measurable study goals for each session. Instead of \"study networking,\" aim to \"understand and diagram the OSI model layers.\" This creates clear endpoints and a sense of accomplishment.",
-  "Here's a study tip for students:\n\n- Use the Feynman Technique: Explain a complex computing concept in simple terms as if teaching a beginner. This reveals gaps in your understanding and reinforces your knowledge of the material.",
+  "Here's a study tip for students:\n\n- Use the Pomodoro Technique: Study for 25 minutes, then take a 5-minute break. This improves focus by working with your brain's natural attention cycles. Ideal for complex topics requiring deep concentration.",
+  "Here's a study tip for students:\n\n- Create a dedicated study environment free from distractions. Your brain forms associations with physical spaces, making it easier to focus when you're in your designated study area. Perfect for deep learning in any subject.",
+  "Here's a study tip for students:\n\n- Practice active recall by testing yourself rather than just re-reading notes. Try explaining concepts out loud as if teaching someone else. This strengthens neural pathways and improves retention across all subjects.",
+  "Here's a study tip for students:\n\n- Use spaced repetition for memorizing important concepts. Review material at increasing intervals (1 day, 3 days, 1 week, etc.). This technique is especially effective for remembering key facts, formulas, and definitions.",
+  "Here's a study tip for students:\n\n- Break complex topics into smaller, manageable chunks. Master one concept before moving to the next. This prevents overwhelm and builds confidence through incremental success, regardless of what you're studying.",
+  "Here's a study tip for students:\n\n- Create mind maps to visualize connections between different concepts. This spatial organization helps your brain form meaningful associations and see the bigger picture in complex subjects, from sciences to humanities.",
+  'Here\'s a study tip for students:\n\n- Set specific, measurable study goals for each session. Instead of "study chemistry," aim to "understand and diagram the three types of chemical bonds." This creates clear endpoints and a sense of accomplishment.',
+  "Here's a study tip for students:\n\n- Use the Feynman Technique: Explain a complex concept in simple terms as if teaching a beginner. This reveals gaps in your understanding and reinforces your knowledge of the material, works for any field of study.",
   "Here's a study tip for students:\n\n- Alternate between different subjects or problem types in a single study session. This interleaving approach forces your brain to retrieve different strategies and strengthens overall learning more than blocked practice.",
-  "Here's a study tip for students:\n\n- Take brief, regular movement breaks during study sessions. Physical activity increases blood flow to the brain, improving cognitive function. Even a 5-minute walk can refresh your mind for tackling difficult coding problems."
+  "Here's a study tip for students:\n\n- Take brief, regular movement breaks during study sessions. Physical activity increases blood flow to the brain, improving cognitive function. Even a 5-minute walk can refresh your mind for tackling difficult problems.",
 ];
 
 // Predefined motivational messages for progress reports
 const predefinedMotivationalMessages = [
-  "Your dedication and consistency will lead you to success in CE and IT field. Keep pushing forward and remember that every hour you invest in learning is a step closer to achieving your goals.",
-  "Small steps every day add up to big results over time. Keep building your knowledge consistently!",
-  "The effort you put into your studies today will shape your professional future tomorrow. Keep up the great work!",
-  "Persistence is the key to mastering complex technical topics. Your consistent effort is building a strong foundation for success.",
-  "Every study session brings you closer to your goals. Your dedication today will open doors to opportunities tomorrow.",
-  "Learning to code is a journey, not a destination. Each day of practice makes you stronger and more skilled.",
-  "Great job on your progress today! Remember that consistent small improvements compound into mastery over time.",
-  "Your commitment to learning is inspiring. Keep nurturing your technical skills, and you'll achieve remarkable results.",
-  "Success in tech comes from consistent practice and problem-solving. You're building those skills every day!",
-  "The road to becoming a great developer is built one study session at a time. You're making excellent progress!"
+  "Your dedication and consistency will lead you to success in your field of study. Keep pushing forward and remember that every hour you invest in learning is a step closer to achieving your goals.",
+  "Small steps every day add up to big results over time. Keep building your knowledge consistently, regardless of your area of study!",
+  "The effort you put into your studies today will shape your professional future tomorrow. Every subject you master opens new doors of opportunity.",
+  "Persistence is the key to mastering complex topics in any field. Your consistent effort is building a strong foundation for success.",
+  "Every study session brings you closer to your goals. Your dedication today will open doors to opportunities tomorrow, whatever your field of interest.",
+  "Learning is a journey, not a destination. Each day of practice makes you stronger and more skilled in your chosen discipline.",
+  "Great job on your progress today! Remember that consistent small improvements compound into mastery over time, no matter what you're studying.",
+  "Your commitment to learning is inspiring. Keep nurturing your skills and knowledge, and you'll achieve remarkable results in your field.",
+  "Success comes from consistent practice and problem-solving. You're building valuable skills every day that will serve you well in your future endeavors.",
+  "The road to becoming an expert is built one study session at a time. You're making excellent progress toward your educational goals!",
 ];
+
+// Predefined motivational messages based on progress level
+const progressBasedMessages = {
+  // For students who haven't made progress yet or just started
+  beginner: [
+    "Starting your learning journey is often the hardest part, and you've already taken that step. That's something to be proud of!",
+    "Everyone begins somewhere. Your willingness to start learning sets you apart and will take you far in your studies.",
+    "The first steps of any learning journey can be challenging, but they're also the most important. You've got this!",
+    "You're at the beginning of an exciting learning adventure. Each small step you take builds momentum for future success.",
+    "Starting fresh gives you a world of possibilities. Embrace this beginning and watch your knowledge grow day by day.",
+  ],
+
+  // For students who have been consistently studying
+  intermediate: [
+    "Your consistent dedication to your studies is building a solid foundation of knowledge. Keep that momentum going!",
+    "The steady progress you're making shows real commitment to your learning goals. That persistence will take you far.",
+    "You're finding your rhythm in your studies, and that consistent effort is how lasting knowledge is built. Well done!",
+    "Consistent practice is the hallmark of successful learners, and you're demonstrating that quality every day.",
+    "Your regular study habits are setting you apart. This consistent approach will serve you well throughout your academic journey.",
+  ],
+
+  // For students who have been studying for a long time
+  advanced: [
+    "The dedication you've shown over your extended learning journey is remarkable. You've come so far, and that persistence will continue to serve you well.",
+    "Your long-term commitment to your studies shows a rare level of discipline. That quality will be invaluable throughout your life and career.",
+    "The depth of knowledge you're building through consistent, long-term study creates a foundation that few achieve. Be proud of your exceptional commitment.",
+    "Your sustained dedication to learning demonstrates character that extends far beyond academics. You're developing life skills that will benefit you in countless ways.",
+    "The journey you've been on represents hundreds of choices to prioritize growth and learning. That's something truly special.",
+  ],
+};
 
 // API Endpoints
 
@@ -266,70 +296,75 @@ app.post("/api/user/:userId", async (req, res) => {
 async function getHuggingFaceSuggestion(promptText) {
   // Using the working model we found: facebook/bart-base
   const model = "facebook/bart-base";
-  
+
   // Check if we have an API key before trying to call the API
   if (!process.env.HUGGINGFACE_API_KEY) {
     console.log("No API key found - skipping API calls");
     throw new Error("No API key configured");
   }
-  
+
   try {
     console.log(`Attempting to use model: ${model}`);
-    
+
     // Since bart-base is a text2text model, we need to format the prompt properly
-    const isStudyTipRequest = promptText.includes("Generate a concise study tip");
-    
+    const isStudyTipRequest = promptText.includes(
+      "Generate a concise study tip"
+    );
+
     // Format the prompt appropriately for the model
     const formattedPrompt = isStudyTipRequest
       ? `Create a short, actionable study tip that helps students improve their learning efficiency. The tip should be concise and specific. For example: "To improve focus, study in 25-minute blocks with 5-minute breaks. This matches your brain's attention span and boosts productivity."`
       : `Generate a study suggestion based on the following information: ${promptText}`;
-    
+
     const response = await axios({
-      method: 'post',
+      method: "post",
       url: `https://api-inference.huggingface.co/models/${model}`,
       headers: {
-        'Authorization': `Bearer ${process.env.HUGGINGFACE_API_KEY}`,
-        'Content-Type': 'application/json'
+        Authorization: `Bearer ${process.env.HUGGINGFACE_API_KEY}`,
+        "Content-Type": "application/json",
       },
       data: {
         inputs: formattedPrompt,
         parameters: {
           max_length: 300,
-          min_length: 50,  // Add a minimum length to encourage non-empty responses
+          min_length: 50, // Add a minimum length to encourage non-empty responses
           do_sample: true,
           temperature: 0.7,
-          num_beams: 4
-        }
+          num_beams: 4,
+        },
       },
-      timeout: 15000 // 15 second timeout
+      timeout: 15000, // 15 second timeout
     });
-    
+
     if (response.status === 200) {
       // Handle different response formats
       let generatedText = "";
-      
+
       if (Array.isArray(response.data) && response.data.length > 0) {
         generatedText = response.data[0].generated_text || "";
-      } else if (typeof response.data === 'string') {
+      } else if (typeof response.data === "string") {
         generatedText = response.data;
       } else if (response.data && response.data.generated_text) {
         generatedText = response.data.generated_text;
       }
-      
+
       console.log(`Successfully generated suggestion using model: ${model}`);
       console.log("Raw generated text:", generatedText);
-      
+
       // Check if the response is empty or too short (less than 10 chars)
       if (!generatedText || generatedText.trim().length < 10) {
         console.log("Response too short or empty, using fallback");
         throw new Error("Empty or too short response from model");
       }
-      
+
       // Ensure proper formatting for study tips
-      if (isStudyTipRequest && !generatedText.toLowerCase().includes("here's a study tip")) {
+      if (
+        isStudyTipRequest &&
+        !generatedText.toLowerCase().includes("here's a study tip")
+      ) {
         generatedText = `Here's a study tip for students:\n\n- ${generatedText}`;
       }
-      
+
       return generatedText.trim();
     } else {
       throw new Error(`Invalid response status: ${response.status}`);
@@ -343,7 +378,7 @@ async function getHuggingFaceSuggestion(promptText) {
 // Endpoint for AI suggestions using Hugging Face Inference API
 app.post("/api/ai-suggestion", async (req, res) => {
   const { tasks = [], studyHabits = {}, customPrompt } = req.body;
-  
+
   try {
     // Validate tasks is an array
     if (!Array.isArray(tasks)) {
@@ -363,36 +398,42 @@ app.post("/api/ai-suggestion", async (req, res) => {
       userData.cachedSuggestions.get(cacheKey)
     ) {
       // Add artificial delay for cache hit as well to maintain consistent UX
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
       return res.json({ suggestion: userData.cachedSuggestions.get(cacheKey) });
     }
 
     // Check if this is a study tip request (based on the customPrompt content)
-    const isStudyTipRequest = customPrompt && customPrompt.includes("Generate a concise study tip");
-    
+    const isStudyTipRequest =
+      customPrompt && customPrompt.includes("Generate a concise study tip");
+
     // Check if this is a progress report request
-    const isProgressReport = customPrompt && customPrompt.includes("Generate a list of 10 short motivational messages");
+    const isProgressReport =
+      customPrompt &&
+      customPrompt.includes(
+        "Generate a list of 10 short motivational messages"
+      );
 
     let suggestion;
-    
+
     // Add a consistent delay to simulate processing time (improves UX)
-    await new Promise(resolve => setTimeout(resolve, 1200)); // Increased delay to 1.2 seconds
-    
+    await new Promise((resolve) => setTimeout(resolve, 1200)); // Increased delay to 1.2 seconds
+
     // For study tips specifically, use our predefined tips directly
     // This is more reliable than trying to use the API which is returning empty responses
     if (isStudyTipRequest) {
-      console.log("Using predefined study tip for reliable response");
-      suggestion = predefinedStudyTips[Math.floor(Math.random() * predefinedStudyTips.length)];
+      suggestion =
+        predefinedStudyTips[
+          Math.floor(Math.random() * predefinedStudyTips.length)
+        ];
     } else if (isProgressReport) {
       // For progress reports, make sure we include a motivational message
       try {
-        console.log("Generating progress report");
-        
         // Get the progress data from the request
         const today = new Date();
         const todayStr = today.toISOString().split("T")[0]; // YYYY-MM-DD in IST
         const todayStudyHours =
-          studyHabits.studyHoursLog?.find((log) => log.date === todayStr)?.hours || 0;
+          studyHabits.studyHoursLog?.find((log) => log.date === todayStr)
+            ?.hours || 0;
         const tasksCompletedToday = tasks.filter(
           (task) => task.completed && task.completedDate === todayStr
         );
@@ -406,19 +447,44 @@ app.post("/api/ai-suggestion", async (req, res) => {
         const lowPriorityCompleted = tasksCompletedToday.filter(
           (task) => task.priority === "Low"
         ).length;
-        
-        // Select a random motivational message
-        const motivationalMessage = predefinedMotivationalMessages[
-          Math.floor(Math.random() * predefinedMotivationalMessages.length)
-        ];
-        
+
+        // Determine progress level based on stats and task history
+        let progressLevel = "beginner";
+        const streak = studyHabits.streak || 0;
+        const totalHours = studyHabits.totalHours || 0;
+        const completedTasks = tasks.filter((task) => task.completed).length;
+
+        if (streak > 14 || totalHours > 50 || completedTasks > 30) {
+          progressLevel = "advanced";
+        } else if (streak > 5 || totalHours > 20 || completedTasks > 10) {
+          progressLevel = "intermediate";
+        }
+
+        // Select a random motivational message based on progress level
+        let motivationalMessage;
+        const noProgressToday =
+          todayStudyHours === 0 && totalTasksCompletedToday === 0;
+
+        if (noProgressToday) {
+          // For days with no progress, use beginner messages to encourage starting
+          motivationalMessage =
+            progressBasedMessages.beginner[
+              Math.floor(Math.random() * progressBasedMessages.beginner.length)
+            ];
+        } else {
+          // Use progress level appropriate messages
+          const messagesForLevel = progressBasedMessages[progressLevel];
+          motivationalMessage =
+            messagesForLevel[
+              Math.floor(Math.random() * messagesForLevel.length)
+            ];
+        }
+
         // Format the progress report with the motivational message - DO NOT include a date in the motivational message
-        suggestion = `Here's your progress for today (${todayStr}):\n\n- Total Study Hours Today: ${todayStudyHours} hour${todayStudyHours !== 1 ? "s" : ""}\n- Tasks Completed Today: ${totalTasksCompletedToday}\n- High Priority Tasks Completed Today: ${highPriorityCompleted}\n- Medium Priority Tasks Completed Today: ${mediumPriorityCompleted}\n- Low Priority Tasks Completed Today: ${lowPriorityCompleted}\n\n${motivationalMessage}`;
-        
-        console.log("Generated progress report successfully");
+        suggestion = `Here's your progress for today (${todayStr}):\n\n- Total Study Hours Today: ${todayStudyHours} hour${
+          todayStudyHours !== 1 ? "s" : ""
+        }\n- Tasks Completed Today: ${totalTasksCompletedToday}\n- High Priority Tasks Completed Today: ${highPriorityCompleted}\n- Medium Priority Tasks Completed Today: ${mediumPriorityCompleted}\n- Low Priority Tasks Completed Today: ${lowPriorityCompleted}\n\n${motivationalMessage}`;
       } catch (error) {
-        console.log("Error generating progress report:", error.message);
-        
         // Fallback motivational message if there's an error
         const motivationalMessage = predefinedMotivationalMessages[0];
         const today = new Date();
@@ -428,40 +494,42 @@ app.post("/api/ai-suggestion", async (req, res) => {
     } else {
       // For regular suggestions (not study tips), try the Hugging Face API first
       try {
-        console.log("Attempting to generate personalized suggestion from Hugging Face API");
-        suggestion = await getHuggingFaceSuggestion(generateDefaultPrompt(tasks, studyHabits));
-        console.log("Successfully generated suggestion from Hugging Face API");
+        suggestion = await getHuggingFaceSuggestion(
+          generateDefaultPrompt(tasks, studyHabits)
+        );
       } catch (error) {
-        console.log("Falling back to local generation:", error.message);
-        
         // For regular suggestions, use local generation
         const today = new Date();
         const todayStr = today.toISOString().split("T")[0]; // YYYY-MM-DD in IST
         const filteredTasks = tasks.filter((task) => {
           const isNotCompleted = !task.completed;
-          const isDueTodayOrUpcoming = new Date(task.dueDate) >= new Date(todayStr);
+          const isDueTodayOrUpcoming =
+            new Date(task.dueDate) >= new Date(todayStr);
           return isNotCompleted && isDueTodayOrUpcoming;
         });
-        
+
         // Get today's study hours from studyHabits
         const todayStudyHours =
-          studyHabits.studyHoursLog?.find((log) => log.date === todayStr)?.hours || 0;
-            
-        suggestion = generateFallbackSuggestion(filteredTasks, studyHabits, todayStudyHours, todayStr);
-        console.log("Generated local fallback suggestion");
+          studyHabits.studyHoursLog?.find((log) => log.date === todayStr)
+            ?.hours || 0;
+
+        suggestion = generateFallbackSuggestion(
+          filteredTasks,
+          studyHabits,
+          todayStudyHours,
+          todayStr
+        );
       }
     }
 
     // Add debugging to see what's being sent to the frontend
-    console.log("Formatted suggestion before sending to frontend:", suggestion);
-
-    // Skip validation for customPrompt requests or if it's a study tip
     if (!customPrompt && !isStudyTipRequest) {
       const today = new Date();
       const todayStr = today.toISOString().split("T")[0]; // YYYY-MM-DD in IST
       const todayStudyHours =
-        studyHabits.studyHoursLog?.find((log) => log.date === todayStr)?.hours || 0;
-      
+        studyHabits.studyHoursLog?.find((log) => log.date === todayStr)
+          ?.hours || 0;
+
       const requiredMotivationalMessage =
         "Your dedication and consistency will lead you to success in CE and IT field. Keep pushing forward and remember that every hour you invest in learning is a step closer to achieving your goals.";
       if (!suggestion.includes(requiredMotivationalMessage)) {
@@ -530,10 +598,11 @@ app.post("/api/ai-suggestion", async (req, res) => {
 
       const filteredTasks = tasks.filter((task) => {
         const isNotCompleted = !task.completed;
-        const isDueTodayOrUpcoming = new Date(task.dueDate) >= new Date(todayStr);
+        const isDueTodayOrUpcoming =
+          new Date(task.dueDate) >= new Date(todayStr);
         return isNotCompleted && isDueTodayOrUpcoming;
       });
-      
+
       if (
         filteredTasks.length === 0 &&
         !suggestion.includes("- General Study Tip:")
@@ -564,18 +633,18 @@ app.post("/api/ai-suggestion", async (req, res) => {
 function generateDefaultPrompt(tasks, studyHabits) {
   const today = new Date();
   const todayStr = today.toISOString().split("T")[0]; // YYYY-MM-DD in IST
-  
+
   // Filter tasks to only include incomplete tasks due today or upcoming
   const filteredTasks = tasks.filter((task) => {
     const isNotCompleted = !task.completed;
     const isDueTodayOrUpcoming = new Date(task.dueDate) >= new Date(todayStr);
     return isNotCompleted && isDueTodayOrUpcoming;
   });
-  
+
   // Get today's study hours from studyHabits
   const todayStudyHours =
     studyHabits.studyHoursLog?.find((log) => log.date === todayStr)?.hours || 0;
-  
+
   return `Create a study plan for today based on this information:
 Tasks: ${JSON.stringify(filteredTasks)}
 Study habits: ${JSON.stringify(studyHabits)}
@@ -593,9 +662,14 @@ Format the response with these sections:
 }
 
 // Function to generate a fallback suggestion when API calls fail
-function generateFallbackSuggestion(tasks, studyHabits, todayStudyHours, todayStr) {
+function generateFallbackSuggestion(
+  tasks,
+  studyHabits,
+  todayStudyHours,
+  todayStr
+) {
   const actualStreak = studyHabits.streak || 0;
-  
+
   // Check if there are any tasks
   if (tasks.length === 0) {
     return `- High Priority:
@@ -612,44 +686,52 @@ function generateFallbackSuggestion(tasks, studyHabits, todayStudyHours, todaySt
   - Keep consistent to build your streak and achieve your goals!
 Your dedication and consistency will lead you to success in CE and IT field. Keep pushing forward and remember that every hour you invest in learning is a step closer to achieving your goals.`;
   }
-  
+
   // If there are tasks, organize them by priority
-  const highPriorityTasks = tasks.filter(task => task.priority === "High");
-  const mediumPriorityTasks = tasks.filter(task => task.priority === "Medium");
-  const lowPriorityTasks = tasks.filter(task => task.priority === "Low");
-  
+  const highPriorityTasks = tasks.filter((task) => task.priority === "High");
+  const mediumPriorityTasks = tasks.filter(
+    (task) => task.priority === "Medium"
+  );
+  const lowPriorityTasks = tasks.filter((task) => task.priority === "Low");
+
   let suggestion = "";
-  
+
   // Add high priority tasks
   suggestion += "- High Priority:\n";
   if (highPriorityTasks.length > 0) {
-    highPriorityTasks.forEach(task => {
-      suggestion += `  - ${task.title} (Hours: ${task.hours || 0}, Due: ${task.dueDate})\n`;
+    highPriorityTasks.forEach((task) => {
+      suggestion += `  - ${task.title} (Hours: ${task.hours || 0}, Due: ${
+        task.dueDate
+      })\n`;
     });
   } else {
     suggestion += "  - None\n";
   }
-  
+
   // Add medium priority tasks
   suggestion += "- Medium Priority:\n";
   if (mediumPriorityTasks.length > 0) {
-    mediumPriorityTasks.forEach(task => {
-      suggestion += `  - ${task.title} (Hours: ${task.hours || 0}, Due: ${task.dueDate})\n`;
+    mediumPriorityTasks.forEach((task) => {
+      suggestion += `  - ${task.title} (Hours: ${task.hours || 0}, Due: ${
+        task.dueDate
+      })\n`;
     });
   } else {
     suggestion += "  - None\n";
   }
-  
+
   // Add low priority tasks
   suggestion += "- Low Priority:\n";
   if (lowPriorityTasks.length > 0) {
-    lowPriorityTasks.forEach(task => {
-      suggestion += `  - ${task.title} (Hours: ${task.hours || 0}, Due: ${task.dueDate})\n`;
+    lowPriorityTasks.forEach((task) => {
+      suggestion += `  - ${task.title} (Hours: ${task.hours || 0}, Due: ${
+        task.dueDate
+      })\n`;
     });
   } else {
     suggestion += "  - None\n";
   }
-  
+
   // Add habits section
   suggestion += `- Habits:
   - Total study hours for today: ${todayStudyHours} hour
