@@ -1,172 +1,206 @@
-// Save this as find-working-models.js in your backend folder
-const axios = require('axios');
-const dotenv = require('dotenv');
-const fs = require('fs');
-dotenv.config();
+// find-working-models.js
+// A script to find and test free Hugging Face models for study suggestions
 
-const apiKey = process.env.HUGGINGFACE_API_KEY;
-console.log(`Checking API key: ${apiKey.substring(0, 5)}...${apiKey.substring(apiKey.length - 4)}`);
+require("dotenv").config();
+const axios = require("axios");
 
-// A more comprehensive list of models to try, including smaller and potentially more accessible ones
-const models = [
-  // Smaller text generation models
-  "distilgpt2",
-  "gpt2",
-  "EleutherAI/gpt-neo-125m",
-  "bigscience/bloom-560m",
-  "facebook/opt-125m",
-  "bigcode/tiny_starcoder_py",
-  
-  // Smaller text2text models
-  "google/flan-t5-small",
-  "facebook/bart-base",
-  "t5-small",
-  
-  // Text classification models
-  "distilbert-base-uncased-finetuned-sst-2-english",
-  "textattack/bert-base-uncased-SST-2",
-  
-  // Fill-mask models
-  "bert-base-uncased",
-  "distilbert-base-uncased",
-  "roberta-base",
-  
-  // Open-source alternatives to larger models
-  "Qwen/Qwen1.5-0.5B",
-  "databricks/dolly-v2-3b",
-  "HuggingFaceH4/zephyr-7b-alpha",
-  "TinyLlama/TinyLlama-1.1B-Chat-v1.0"
+// Array of models to test
+const modelsToTest = [
+  // Text generation models (best for open-ended suggestions)
+  { name: "gpt2", type: "text-generation" }, // Very reliable, free to use
+  { name: "distilgpt2", type: "text-generation" }, // Faster version of GPT-2
+  { name: "EleutherAI/gpt-neo-125M", type: "text-generation" }, // Small but effective
+  { name: "bigscience/bloom-560m", type: "text-generation" }, // Multilingual model
+  { name: "facebook/opt-125m", type: "text-generation" }, // Meta's OPT model - small version
+  { name: "roneneldan/TinyStories-1M", type: "text-generation" }, // Very small but good for simple text
+
+  // Text-to-text generation models (better for structured responses)
+  { name: "facebook/bart-base", type: "text2text-generation" }, // Good all-around model
+  { name: "facebook/bart-large-cnn", type: "text2text-generation" }, // Better quality but slower
+  { name: "t5-small", type: "text2text-generation" }, // Google's T5 model
+  { name: "google/flan-t5-small", type: "text2text-generation" }, // Instruction-tuned T5
+  { name: "google/flan-t5-base", type: "text2text-generation" }, // Larger instruction-tuned T5
+
+  // Smaller specialized models
+  { name: "Xenova/transformers.js-model", type: "text-generation" }, // Designed for browser/Node.js
+  { name: "distilbert-base-uncased", type: "fill-mask" }, // Good for completing sentences
+  { name: "microsoft/DialoGPT-small", type: "text-generation" }, // Dialog generation
+  { name: "facebook/blenderbot-400M-distill", type: "text-generation" }, // Conversational
 ];
 
-// Keep track of working models
-const workingModels = {
-  textGeneration: [],
-  text2text: [],
-  fillMask: [],
-  textClassification: []
-};
+// Test prompts
+const testPrompts = [
+  {
+    name: "Study tip",
+    prompt:
+      "Create a short, actionable study tip for students to improve learning efficiency.",
+  },
+  {
+    name: "Motivational message",
+    prompt:
+      "Generate a motivational message for a student who studied for 2 hours today and completed 3 tasks.",
+  },
+  {
+    name: "Study schedule",
+    prompt:
+      "Create a study schedule for a student with 3 high priority and 2 medium priority tasks.",
+  },
+];
 
-async function testModel(model) {
-  console.log(`Testing model: ${model}`);
-  
-  // Choose appropriate inputs based on model type
-  let endpoint = `https://api-inference.huggingface.co/models/${model}`;
-  let inputs = "Hello, I am a student studying computer science. I need a study tip.";
-  let taskType = "textGeneration"; // Default task type
-  
-  // Adjust input for certain model types
-  if (model.includes("t5") || model.includes("bart")) {
-    inputs = "translate English to French: Hello, how are you?";
-    taskType = "text2text";
-  } else if (model.includes("bert") || model.includes("roberta")) {
-    if (model.includes("SST-2") || model.includes("sst-2")) {
-      inputs = "I really enjoyed this movie!";
-      taskType = "textClassification";
-    } else {
-      inputs = "The [MASK] is a computer science student.";
-      taskType = "fillMask";
-    }
-  }
-  
+// Function to test a model with a prompt
+async function testModel(model, prompt) {
   try {
+    console.log(`Testing ${model.name} with prompt: ${prompt.name}...`);
+
+    // Configure parameters based on model type
+    let parameters = {};
+
+    if (model.type === "text-generation") {
+      parameters = {
+        max_new_tokens: 100,
+        temperature: 0.7,
+        top_p: 0.9,
+        do_sample: true,
+        return_full_text: false,
+      };
+    } else if (model.type === "text2text-generation") {
+      parameters = {
+        max_length: 100,
+        min_length: 20,
+        do_sample: true,
+        temperature: 0.7,
+      };
+    } else if (model.type === "fill-mask") {
+      // For fill-mask models, we need to use a different approach
+      // by including a [MASK] token in the prompt
+      prompt.prompt = prompt.prompt.replace(".", " [MASK].");
+    }
+
     const response = await axios({
-      method: 'post',
-      url: endpoint,
+      method: "post",
+      url: `https://api-inference.huggingface.co/models/${model.name}`,
       headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
+        Authorization: `Bearer ${process.env.HUGGINGFACE_API_KEY}`,
+        "Content-Type": "application/json",
       },
       data: {
-        inputs: inputs,
-        parameters: {
-          // Different models may need different parameters
-          ...(taskType === "textGeneration" ? {
-            max_new_tokens: 30,
-            do_sample: true,
-            temperature: 0.7,
-            top_p: 0.9
-          } : {})
-        }
+        inputs: prompt.prompt,
+        parameters: parameters,
+        options: {
+          use_cache: true,
+          wait_for_model: true,
+        },
       },
-      timeout: 15000
+      timeout: 30000, // 30 second timeout
     });
-    
-    console.log(`✅ Model ${model} is accessible!`);
-    console.log(`Response status: ${response.status}`);
-    console.log(`Response type: ${typeof response.data}`);
-    
-    // Show a preview of the response
-    if (Array.isArray(response.data)) {
-      console.log(`Response (array): ${JSON.stringify(response.data.slice(0, 1), null, 2)}`);
-    } else if (typeof response.data === 'object') {
-      console.log(`Response (object): ${JSON.stringify(response.data, null, 2)}`);
-    } else {
-      console.log(`Response: ${response.data.substring(0, 100)}...`);
+
+    // Extract the generated text based on model type
+    let generatedText = "";
+
+    if (model.type === "text-generation") {
+      if (Array.isArray(response.data) && response.data.length > 0) {
+        generatedText = response.data[0].generated_text || "";
+      }
+    } else if (model.type === "text2text-generation") {
+      if (response.data && response.data.generated_text) {
+        generatedText = response.data.generated_text;
+      } else if (Array.isArray(response.data) && response.data.length > 0) {
+        generatedText = response.data[0].generated_text || "";
+      }
+    } else if (model.type === "fill-mask") {
+      if (Array.isArray(response.data) && response.data.length > 0) {
+        generatedText = response.data.map((item) => item.sequence).join(" / ");
+      }
     }
-    
-    // Add to working models
-    workingModels[taskType].push(model);
-    return true;
+
+    console.log(`✅ SUCCESS for ${model.name}`);
+    console.log(
+      `Response: ${generatedText.slice(0, 200)}${
+        generatedText.length > 200 ? "..." : ""
+      }`
+    );
+    return { success: true, text: generatedText };
   } catch (error) {
-    console.log(`❌ Failed to access model ${model}`);
-    if (error.response) {
-      console.log(`Status code: ${error.response.status}`);
-      if (error.response.data) {
-        console.log(`Error message:`, error.response.data);
-      }
-      
-      // Check for rate limiting
-      if (error.response.status === 429) {
-        console.log("⚠️ API KEY HAS REACHED ITS RATE LIMIT!");
-      }
-    } else {
-      console.log(`Error: ${error.message}`);
-    }
-    return false;
+    console.log(`❌ FAILED for ${model.name}: ${error.message}`);
+    return { success: false, error: error.message };
   }
 }
 
-async function main() {
-  console.log("Starting comprehensive model testing...");
-  console.log("=================================");
-  
-  for (const model of models) {
-    await testModel(model);
-    console.log("---------------------------------");
-  }
-  
-  // Save results to a file
-  console.log("\nSummary of working models:");
-  console.log("=================================");
-  
-  let summaryText = "# Hugging Face API Working Models\n\n";
-  
-  for (const [taskType, modelList] of Object.entries(workingModels)) {
-    console.log(`\n${taskType} (${modelList.length} working):`);
-    summaryText += `\n## ${taskType} (${modelList.length} working)\n\n`;
-    
-    if (modelList.length > 0) {
-      modelList.forEach(model => {
-        console.log(`- ${model}`);
-        summaryText += `- ${model}\n`;
+// Function to run all tests and collect results
+async function runTests() {
+  console.log("=== STARTING MODEL TESTS ===");
+  console.log(
+    `Testing ${modelsToTest.length} models with ${testPrompts.length} prompts each`
+  );
+
+  const results = [];
+
+  for (const model of modelsToTest) {
+    const modelResults = {
+      name: model.name,
+      type: model.type,
+      promptResults: [],
+    };
+
+    for (const prompt of testPrompts) {
+      const result = await testModel(model, prompt);
+      modelResults.promptResults.push({
+        promptName: prompt.name,
+        success: result.success,
+        text: result.success ? result.text : result.error,
       });
-    } else {
-      console.log("No working models found for this task.");
-      summaryText += "No working models found for this task.\n";
     }
+
+    // Calculate success rate for this model
+    const successCount = modelResults.promptResults.filter(
+      (r) => r.success
+    ).length;
+    modelResults.successRate = (successCount / testPrompts.length) * 100;
+    results.push(modelResults);
   }
-  
-  fs.writeFileSync('working-models.md', summaryText);
-  console.log("\nResults saved to working-models.md");
-  
-  // Determine overall results
-  const totalWorkingModels = Object.values(workingModels).flat().length;
-  
-  if (totalWorkingModels > 0) {
-    console.log(`\n✅ Found ${totalWorkingModels} working models you can use!`);
+
+  // Sort results by success rate
+  results.sort((a, b) => b.successRate - a.successRate);
+
+  // Display summary
+  console.log("\n=== TEST RESULTS SUMMARY ===");
+  results.forEach((model, index) => {
+    console.log(
+      `${index + 1}. ${model.name} (${model.type}): ${
+        model.successRate
+      }% success rate`
+    );
+  });
+
+  console.log("\n=== RECOMMENDED MODELS ===");
+  const recommendedModels = results.filter((model) => model.successRate >= 66);
+  if (recommendedModels.length > 0) {
+    recommendedModels.forEach((model, index) => {
+      console.log(
+        `${index + 1}. ${model.name} (${model.type}): ${
+          model.successRate
+        }% success rate`
+      );
+    });
   } else {
-    console.log("\n❌ No working models found. Consider using the local solution.");
+    console.log("No models achieved at least 66% success rate. Best options:");
+    results.slice(0, 3).forEach((model, index) => {
+      console.log(
+        `${index + 1}. ${model.name} (${model.type}): ${
+          model.successRate
+        }% success rate`
+      );
+    });
   }
+
+  return results;
 }
 
-main().catch(console.error);
+// Run the tests if this is the main script
+if (require.main === module) {
+  runTests().catch((error) => {
+    console.error("Error running tests:", error);
+  });
+}
+
+module.exports = { runTests, testModel, modelsToTest, testPrompts };
