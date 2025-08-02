@@ -11,6 +11,8 @@ const userDataSchema = new mongoose.Schema({
       subject: String,
       completed: Boolean,
       completedDate: String,
+      pointsAwarded: Boolean,
+      hours: Number,
     },
   ],
   studyStats: {

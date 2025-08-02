@@ -22,7 +22,9 @@
       "Bash(curl:*)",
       "Bash(npm uninstall:*)",
       "Bash(ls:*)",
-      "Bash(git check-ignore:*)"
+      "Bash(git check-ignore:*)",
+      "Bash(npm run build:*)",
+      "Bash(kill:*)"
     ],
     "deny": []
   }

@@ -10,11 +10,11 @@ function UpcomingTasksCard({
 }) {
   const styles = getCardStyles(currentTheme);
 
-  // Helper function to format date from yyyy-mm-dd to dd-mm-yyyy
+  // Helper function to format date - already in DD-MM-YYYY format from database
   const formatDateForDisplay = (dateString) => {
     if (!dateString) return '';
-    const [year, month, day] = dateString.split('-');
-    return `${day}-${month}-${year}`;
+    // Database already stores in DD-MM-YYYY format, so return as-is
+    return dateString;
   };
 
   const nonDeletedTasks = tasks.filter((task) => !task.deleted);

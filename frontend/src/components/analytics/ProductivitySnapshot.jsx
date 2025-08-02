@@ -11,16 +11,28 @@ function ProductivitySnapshot({ tasks, past7Days, currentTheme }) {
     return `${day}-${month}-${year}`;
   };
 
+  // Helper function to convert DD-MM-YYYY to Date object for comparison
+  const parseDDMMYYYY = (ddmmyyyy) => {
+    if (!ddmmyyyy) return new Date(0);
+    const [day, month, year] = ddmmyyyy.split('-');
+    return new Date(year, month - 1, day);
+  };
+
   const nonDeletedTasks = tasks.filter((task) => !task.deleted);
 
-  // Ensure todayStr is in IST
+  // Get today's date in DD-MM-YYYY format to match database format
   const today = new Date();
   const todayStr = today.toLocaleDateString("en-CA", {
     timeZone: "Asia/Kolkata",
-  }); // "2025-06-12"
+  }); // "2025-08-02" 
+  
+  // Convert to DD-MM-YYYY format for consistent comparison
+  const [todayYear, todayMonth, todayDay] = todayStr.split('-');
+  const todayDDMMYYYY = `${todayDay}-${todayMonth}-${todayYear}`;
+  const todayDateObj = parseDDMMYYYY(todayDDMMYYYY);
 
   const overdueTasks = nonDeletedTasks.filter(
-    (task) => !task.completed && task.dueDate && task.dueDate < todayStr
+    (task) => !task.completed && task.dueDate && parseDDMMYYYY(task.dueDate) < todayDateObj
   );
   const incompleteHighPriorityTasks = nonDeletedTasks.filter(
     (task) => !task.completed && task.priority === "High"
@@ -28,8 +40,12 @@ function ProductivitySnapshot({ tasks, past7Days, currentTheme }) {
 
   // Calculate completed tasks and total hours per day, with full day names
   const completedTasksByDay = past7Days.map((dayObj) => {
+    // Convert YYYY-MM-DD to DD-MM-YYYY for comparison with database dates
+    const [year, month, day] = dayObj.date.split('-');
+    const ddmmyyyy = `${day}-${month}-${year}`;
+    
     const completedTasksOnDay = nonDeletedTasks.filter(
-      (task) => task.completed && task.completedDate === dayObj.date
+      (task) => task.completed && task.completedDate === ddmmyyyy
     );
     const count = completedTasksOnDay.length;
     const hours = completedTasksOnDay.reduce(

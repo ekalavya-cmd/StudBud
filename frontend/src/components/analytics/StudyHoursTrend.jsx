@@ -5,8 +5,12 @@ function StudyHoursTrend({ studyStats, past7Days, currentTheme }) {
   const styles = getCardStyles(currentTheme);
 
   const studyHoursData = past7Days.map((dayObj) => {
+    // Convert YYYY-MM-DD to DD-MM-YYYY for comparison with database dates
+    const [year, month, day] = dayObj.date.split('-');
+    const ddmmyyyy = `${day}-${month}-${year}`;
+    
     const log = (studyStats.studyHoursLog || []).find(
-      (log) => log.date === dayObj.date
+      (log) => log.date === ddmmyyyy
     );
     const hours = log ? log.hours : 0;
     return hours;

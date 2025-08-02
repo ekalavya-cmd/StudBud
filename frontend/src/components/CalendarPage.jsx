@@ -48,6 +48,13 @@ function CalendarPage({
     return `${day}-${month}-${year}`;
   };
 
+  // Helper function to convert DD-MM-YYYY to Date object
+  const parseDDMMYYYY = (ddmmyyyy) => {
+    if (!ddmmyyyy) return null;
+    const [day, month, year] = ddmmyyyy.split('-');
+    return new Date(year, month - 1, day); // month is 0-indexed
+  };
+
   // Handle date selection
   const handleDateChange = (date) => {
     setSelectedDate(date);
@@ -86,7 +93,7 @@ function CalendarPage({
     
     return tasks.filter((task) => {
       if (!task.dueDate) return false;
-      const taskDueDate = getLocalDateString(new Date(task.dueDate));
+      const taskDueDate = getLocalDateString(parseDDMMYYYY(task.dueDate));
       return taskDueDate === selectedDateString;
     }).sort((a, b) => {
       // Sort by completion status (incomplete first) then by priority
@@ -290,7 +297,7 @@ function CalendarPage({
                 
                 const dayTasks = tasks.filter((task) => {
                   if (!task.dueDate) return false;
-                  const taskDueDate = getLocalDateString(new Date(task.dueDate));
+                  const taskDueDate = getLocalDateString(parseDDMMYYYY(task.dueDate));
                   return taskDueDate === dateString;
                 });
                 

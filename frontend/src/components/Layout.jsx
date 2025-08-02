@@ -1,5 +1,5 @@
 // frontend/src/components/Layout.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Header from "./layout/Header";
 import Navigation from "./layout/Navigation";
 import MainContent from "./layout/MainContent";
@@ -45,7 +45,7 @@ function Layout() {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, "0");
     const day = String(date.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
+    return `${day}-${month}-${year}`;
   };
 
   const getNextTheme = () => {
@@ -215,12 +215,12 @@ function Layout() {
           );
           if (incompleteTasks.length === 0) {
             setAiSuggestion(
-              "You have no incomplete tasks! Add a new task to keep progressing."
+              "Excellent work! You've completed all your tasks. Ready to add something new to your learning journey? I'm here to help you stay on track with your academic goals!"
             );
             setAiSuggestionType("task");
           } else {
             setAiSuggestion(
-              "Looks like you have some tasks to tackle! Add or complete a task to keep progressing."
+              "I can see you have some exciting tasks ahead! Whether you want to tackle one of them or add something new, I'm here to support your learning journey. You've got this!"
             );
             setAiSuggestionType("task");
           }
@@ -228,8 +228,8 @@ function Layout() {
 
         setLoading(false);
       } catch (err) {
-        toast.error("Failed to load user data. Please try again later.");
-        setAiSuggestion("Add a new task to get started!");
+        toast.error("Having trouble connecting to your study data. Please refresh and try again.");
+        setAiSuggestion("Welcome to StudBud! I'm here to help you stay organized and motivated. Start by adding your first task to begin tracking your academic progress!");
         setAiSuggestionType("task");
         setLoading(false);
       }
@@ -245,12 +245,12 @@ function Layout() {
     const incompleteTasks = tasks.filter((task) => !task.completed);
     if (incompleteTasks.length === 0) {
       setAiSuggestion(
-        "You have no incomplete tasks! Add a new task to keep progressing."
+        "Fantastic! You've cleared your task list. Ready to add your next learning challenge? I'm excited to help you continue growing!"
       );
       setAiSuggestionType("task");
     } else {
       setAiSuggestion(
-        "Looks like you have some tasks to tackle! Add or complete a task to keep progressing."
+        "Your learning journey is looking great! I'm here whenever you need study tips, want to complete a task, or add something new to your academic goals."
       );
       setAiSuggestionType("task");
     }
@@ -265,7 +265,7 @@ function Layout() {
     }));
   }, [tasks]);
 
-  const saveUserData = async () => {
+  const saveUserData = useCallback(async () => {
     try {
       const serializedStudyStats = {
         totalHours: studyStats.totalHours,
@@ -311,7 +311,7 @@ function Layout() {
     } catch (err) {
       toast.error(`Failed to save progress: ${err.message}`);
     }
-  };
+  }, [tasks, studyStats, points, badges, currentTheme, unlockedThemes]);
 
   useEffect(() => {
     const debounceSave = setTimeout(() => {
@@ -319,7 +319,7 @@ function Layout() {
     }, 1000);
 
     return () => clearTimeout(debounceSave);
-  }, [tasks, studyStats, points, badges, currentTheme, unlockedThemes]);
+  }, [tasks, studyStats, points, badges, currentTheme, unlockedThemes, saveUserData]);
 
   const logStudyHours = (hours) => {
     const parsedHours = parseFloat(hours);
@@ -468,7 +468,7 @@ Now provide a unique study tip: (Request ID: ${timestamp})`,
       setAiSuggestion(studyTip);
       setAiSuggestionType("studyTip");
     } catch (error) {
-      setAiSuggestion("Failed to fetch study tip. Please try again later.");
+      setAiSuggestion("I'm having trouble generating a study tip right now. Don't worry though - you've got this! Take a moment to review your notes or try a different study technique while I get back on track.");
       setAiSuggestionType("error");
     } finally {
       setIsAiLoading(false);
@@ -487,15 +487,6 @@ Now provide a unique study tip: (Request ID: ${timestamp})`,
         (task) => task.completed && task.completedDate === today
       );
       const totalTasksCompletedToday = tasksCompletedToday.length;
-      const highPriorityCompleted = tasksCompletedToday.filter(
-        (task) => task.priority === "High"
-      ).length;
-      const mediumPriorityCompleted = tasksCompletedToday.filter(
-        (task) => task.priority === "Medium"
-      ).length;
-      const lowPriorityCompleted = tasksCompletedToday.filter(
-        (task) => task.priority === "Low"
-      ).length;
 
       const timestamp = Date.now();
       const prompt = {
@@ -522,6 +513,8 @@ REQUIREMENTS:
 - Applicable to students in any field (science, arts, business, literature, etc.)
 - Each message must be unique and varied in approach
 - No numbering, bullet points, or labels
+- IMPORTANT: Do not include any breakdowns by task priority (High/Medium/Low)
+- Only reference total hours studied and total tasks completed
 
 OUTPUT FORMAT:
 Provide exactly 10 messages, each on a separate line, with no additional formatting.
@@ -612,12 +605,12 @@ Now generate 10 unique motivational messages: (Request ID: ${timestamp})`,
           "Your dedication to learning will open doors to opportunities in your field. Each study session builds valuable skills that will serve you throughout your career.";
       }
 
-      const progressMessage = `Here's your progress for today (${today}):\n\n- Total Study Hours Today: ${todayStudyHours} hour${todayStudyHours !== 1 ? "s" : ""}\n- Tasks Completed Today: ${totalTasksCompletedToday}\n- High Priority Tasks Completed Today: ${highPriorityCompleted}\n- Medium Priority Tasks Completed Today: ${mediumPriorityCompleted}\n- Low Priority Tasks Completed Today: ${lowPriorityCompleted}\n\n${motivationalMessage}`;
+      const progressMessage = `Here's your progress for today (${today}):\n\n- Total Study Hours Today: ${todayStudyHours} hour${todayStudyHours !== 1 ? "s" : ""}\n- Tasks Completed Today: ${totalTasksCompletedToday}\n\n${motivationalMessage}`;
       setAiSuggestion(progressMessage);
       setAiSuggestionType("progressReport");
     } catch (error) {
       setAiSuggestion(
-        "Failed to generate progress report. Please try again later."
+        "I'm experiencing some technical difficulties generating your progress report. Your hard work today is still valuable! In the meantime, take a moment to reflect on what you've accomplished - every step forward counts toward your academic goals."
       );
       setAiSuggestionType("error");
     } finally {
@@ -626,9 +619,17 @@ Now generate 10 unique motivational messages: (Request ID: ${timestamp})`,
   };
 
   const addTask = (newTask) => {
+    // Convert date from YYYY-MM-DD (HTML date input) to DD-MM-YYYY (database format)
+    let formattedDueDate = newTask.dueDate;
+    if (newTask.dueDate && newTask.dueDate.includes('-') && newTask.dueDate.split('-')[0].length === 4) {
+      const [year, month, day] = newTask.dueDate.split('-');
+      formattedDueDate = `${day}-${month}-${year}`;
+    }
+    
     const task = {
       id: Date.now(),
       ...newTask,
+      dueDate: formattedDueDate,
       completedDate: null,
       pointsAwarded: false,
       hours: newTask.hours || 0,
@@ -768,7 +769,7 @@ Now generate 10 unique motivational messages: (Request ID: ${timestamp})`,
 
       return () => clearTimeout(debounceSave);
     }
-  }, [studyStats.streak, badges, points]); // Added missing dependencies
+  }, [studyStats.streak, badges, points, saveUserData]);
 
   const nextTheme = getNextTheme();
 

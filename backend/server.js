@@ -105,6 +105,13 @@ const userDataSchema = new mongoose.Schema({
 
 const UserData = mongoose.model("UserData", userDataSchema);
 
+// Helper function to convert DD-MM-YYYY to Date object for comparison
+const parseDate = (ddmmyyyy) => {
+  if (!ddmmyyyy) return new Date(0); // Invalid date for comparison
+  const [day, month, year] = ddmmyyyy.split('-');
+  return new Date(year, month - 1, day); // month is 0-indexed in JS Date
+};
+
 // Predefined study tips to use as fallback
 const predefinedStudyTips = [
   "Here's a study tip for students:\n\n- Use the Pomodoro Technique: Study for 25 minutes, then take a 5-minute break. This improves focus by working with your brain's natural attention cycles. Ideal for complex topics requiring deep concentration.",
@@ -170,8 +177,16 @@ app.get("/api/user/:userId", async (req, res) => {
   try {
     const userData = await UserData.findOne({ userId: req.params.userId });
     if (!userData) {
-      const today = new Date();
-      const todayStr = today.toISOString().split("T")[0]; // YYYY-MM-DD in IST
+      // Helper function to get the current date in DD-MM-YYYY format
+      const getDateDDMMYYYY = () => {
+        const date = new Date();
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const day = String(date.getDate()).padStart(2, "0");
+        return `${day}-${month}-${year}`;
+      };
+      
+      const todayStr = getDateDDMMYYYY(); // DD-MM-YYYY in IST
       const defaultData = {
         userId: req.params.userId,
         tasks: [],
@@ -833,7 +848,13 @@ app.post("/api/ai-suggestion", async (req, res) => {
         try {
           // Get the progress data from the request
           const today = new Date();
-          const todayStr = today.toISOString().split("T")[0]; // YYYY-MM-DD in IST
+          const todayStr = (() => {
+            const date = new Date();
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, "0");
+            const day = String(date.getDate()).padStart(2, "0");
+            return `${day}-${month}-${year}`;
+          })(); // DD-MM-YYYY in IST
           const todayStudyHours =
             studyHabits.studyHoursLog?.find((log) => log.date === todayStr)
               ?.hours || 0;
@@ -904,18 +925,30 @@ app.post("/api/ai-suggestion", async (req, res) => {
           // Fallback motivational message if there's an error
           const motivationalMessage = predefinedMotivationalMessages[0];
           const today = new Date();
-          const todayStr = today.toISOString().split("T")[0]; // YYYY-MM-DD in IST
+          const todayStr = (() => {
+            const date = new Date();
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, "0");
+            const day = String(date.getDate()).padStart(2, "0");
+            return `${day}-${month}-${year}`;
+          })(); // DD-MM-YYYY in IST
           suggestion = `Here's your progress for today (${todayStr}):\n\n- Total Study Hours Today: 0 hours\n- Tasks Completed Today: 0\n- High Priority Tasks Completed Today: 0\n- Medium Priority Tasks Completed Today: 0\n- Low Priority Tasks Completed Today: 0\n\n${motivationalMessage}`;
         }
       } else {
         console.log(`🗓️ Generating local task suggestion`);
         // For regular suggestions, use local generation
         const today = new Date();
-        const todayStr = today.toISOString().split("T")[0]; // YYYY-MM-DD in IST
+        const todayStr = (() => {
+          const date = new Date();
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, "0");
+          const day = String(date.getDate()).padStart(2, "0");
+          return `${day}-${month}-${year}`;
+        })(); // DD-MM-YYYY in IST
         const filteredTasks = tasks.filter((task) => {
           const isNotCompleted = !task.completed;
           const isDueTodayOrUpcoming =
-            new Date(task.dueDate) >= new Date(todayStr);
+            parseDate(task.dueDate) >= parseDate(todayStr);
           return isNotCompleted && isDueTodayOrUpcoming;
         });
 
@@ -937,7 +970,13 @@ app.post("/api/ai-suggestion", async (req, res) => {
     if (!customPrompt && !isStudyTipRequest) {
       console.log(`🔄 Validating and formatting suggestion`);
       const today = new Date();
-      const todayStr = today.toISOString().split("T")[0]; // YYYY-MM-DD in IST
+      const todayStr = (() => {
+        const date = new Date();
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const day = String(date.getDate()).padStart(2, "0");
+        return `${day}-${month}-${year}`;
+      })(); // DD-MM-YYYY in IST
       const todayStudyHours =
         studyHabits.studyHoursLog?.find((log) => log.date === todayStr)
           ?.hours || 0;
@@ -1011,7 +1050,7 @@ app.post("/api/ai-suggestion", async (req, res) => {
       const filteredTasks = tasks.filter((task) => {
         const isNotCompleted = !task.completed;
         const isDueTodayOrUpcoming =
-          new Date(task.dueDate) >= new Date(todayStr);
+          parseDate(task.dueDate) >= parseDate(todayStr);
         return isNotCompleted && isDueTodayOrUpcoming;
       });
 
@@ -1057,12 +1096,18 @@ app.post("/api/ai-suggestion", async (req, res) => {
 // Function to generate the default prompt for Hugging Face API
 function generateDefaultPrompt(tasks, studyHabits) {
   const today = new Date();
-  const todayStr = today.toISOString().split("T")[0]; // YYYY-MM-DD in IST
+  const todayStr = (() => {
+    const date = new Date();
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${day}-${month}-${year}`;
+  })(); // DD-MM-YYYY in IST
 
   // Filter tasks to only include incomplete tasks due today or upcoming
   const filteredTasks = tasks.filter((task) => {
     const isNotCompleted = !task.completed;
-    const isDueTodayOrUpcoming = new Date(task.dueDate) >= new Date(todayStr);
+    const isDueTodayOrUpcoming = parseDate(task.dueDate) >= parseDate(todayStr);
     return isNotCompleted && isDueTodayOrUpcoming;
   });
 

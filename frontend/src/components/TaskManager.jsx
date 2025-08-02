@@ -18,6 +18,13 @@ function TaskManager({
 
   const priorityValue = { High: 3, Medium: 2, Low: 1 };
 
+  // Helper function to convert DD-MM-YYYY to Date object for proper sorting
+  const parseDate = (ddmmyyyy) => {
+    if (!ddmmyyyy) return new Date(0);
+    const [day, month, year] = ddmmyyyy.split('-');
+    return new Date(year, month - 1, day);
+  };
+
   const sortedAndFilteredTasks = [...tasks]
     .filter((task) => {
       if (filterBy === "completed") return task.completed;
@@ -26,9 +33,9 @@ function TaskManager({
     })
     .sort((a, b) => {
       if (sortBy === "dueDateAsc") {
-        return new Date(a.dueDate) - new Date(b.dueDate);
+        return parseDate(a.dueDate) - parseDate(b.dueDate);
       } else if (sortBy === "dueDateDesc") {
-        return new Date(b.dueDate) - new Date(a.dueDate);
+        return parseDate(b.dueDate) - parseDate(a.dueDate);
       } else if (sortBy === "priorityAsc") {
         return priorityValue[a.priority] - priorityValue[b.priority];
       } else if (sortBy === "priorityDesc") {

@@ -22,11 +22,18 @@ function TaskList({
 
   const currentYear = new Date().getFullYear();
 
-  // Helper function to format date from yyyy-mm-dd to dd-mm-yyyy
+  // Helper function to format date - already in DD-MM-YYYY format from database
   const formatDateForDisplay = (dateString) => {
     if (!dateString) return '';
-    const [year, month, day] = dateString.split('-');
-    return `${day}-${month}-${year}`;
+    // Database already stores in DD-MM-YYYY format, so return as-is
+    return dateString;
+  };
+
+  // Helper function to convert DD-MM-YYYY to YYYY-MM-DD for HTML date input
+  const convertToHTMLDateFormat = (ddmmyyyy) => {
+    if (!ddmmyyyy) return '';
+    const [day, month, year] = ddmmyyyy.split('-');
+    return `${year}-${month}-${day}`;
   };
 
   const isValidDate = (dateString) => {
@@ -53,7 +60,9 @@ function TaskList({
       toast.info("Cannot edit a completed task.");
       return;
     }
-    setEditingTask({ ...task, hours: task.hours || 0 });
+    // Convert DD-MM-YYYY to YYYY-MM-DD for HTML date input
+    const htmlFormatDate = convertToHTMLDateFormat(task.dueDate);
+    setEditingTask({ ...task, dueDate: htmlFormatDate, hours: task.hours || 0 });
     setHasInteractedWithDate(false);
   };
 
@@ -85,7 +94,14 @@ function TaskList({
       return;
     }
 
-    updateTask({ ...editingTask, hours: parsedHours });
+    // Convert date from YYYY-MM-DD (HTML date input) to DD-MM-YYYY (database format)
+    let formattedDueDate = editingTask.dueDate;
+    if (editingTask.dueDate && editingTask.dueDate.includes('-') && editingTask.dueDate.split('-')[0].length === 4) {
+      const [year, month, day] = editingTask.dueDate.split('-');
+      formattedDueDate = `${day}-${month}-${year}`;
+    }
+    
+    updateTask({ ...editingTask, dueDate: formattedDueDate, hours: parsedHours });
     setEditingTask(null);
     setHasInteractedWithDate(false);
   };
@@ -307,20 +323,23 @@ function TaskList({
                         {task.priority}
                       </span>
                     </div>
-                    <p
-                      className={`text-sm flex items-center space-x-1 ${styles.secondaryText}`}
-                    >
-                      <Calendar
-                        className={`${styles.smallIcon} calendar-icon`}
-                      />
-                      <span>Due: {formatDateForDisplay(task.dueDate)}</span>
-                      <span className="ml-2">Hours: {task.hours || 0}</span>
-                    </p>
-                    {task.completed && task.completedDate && (
-                      <p className={`text-xs mt-1 ${styles.mutedText}`}>
-                        Completed on: {formatDateForDisplay(task.completedDate)}
+                    <div>
+                      <p
+                        className={`text-sm flex items-center space-x-1 ${styles.secondaryText}`}
+                      >
+                        <Calendar
+                          className={`${styles.smallIcon} calendar-icon`}
+                        />
+                        <span>Due: {formatDateForDisplay(task.dueDate)}</span>
+                        <span className="ml-2">Hours: {task.hours || 0}</span>
                       </p>
-                    )}
+                      {task.completed && task.completedDate && (
+                        <p className={`text-xs mt-1 flex items-center space-x-1 ${styles.mutedText}`}>
+                          <span className={`${styles.smallIcon}`}></span>
+                          <span>Completed on: {formatDateForDisplay(task.completedDate)}</span>
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
                 <div className="flex space-x-2">

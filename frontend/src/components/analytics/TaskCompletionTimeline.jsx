@@ -7,8 +7,12 @@ function TaskCompletionTimeline({ tasks, past7Days, currentTheme }) {
   const nonDeletedTasks = tasks.filter((task) => !task.deleted);
 
   const completionData = past7Days.map((dayObj) => {
+    // Convert YYYY-MM-DD to DD-MM-YYYY for comparison with database dates
+    const [year, month, day] = dayObj.date.split('-');
+    const ddmmyyyy = `${day}-${month}-${year}`;
+    
     const count = nonDeletedTasks.filter(
-      (task) => task.completed && task.completedDate === dayObj.date
+      (task) => task.completed && task.completedDate === ddmmyyyy
     ).length;
     return count;
   });

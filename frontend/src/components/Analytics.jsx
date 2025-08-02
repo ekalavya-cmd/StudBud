@@ -14,7 +14,7 @@ function Analytics({ tasks, studyStats, currentTheme }) {
   // Use toLocaleDateString to get the correct date in IST
   const todayStr = today.toLocaleDateString("en-CA", {
     timeZone: "Asia/Kolkata",
-  }); // "2025-06-03"
+  }); // "2025-08-03"
   const todayAdjusted = new Date(todayStr); // Create a date object from the IST date string
 
   const daysOfWeek = ["S", "M", "T", "W", "T", "F", "S"];
@@ -24,7 +24,7 @@ function Analytics({ tasks, studyStats, currentTheme }) {
       const date = new Date(todayAdjusted);
       date.setDate(todayAdjusted.getDate() - (6 - index));
       return {
-        date: date.toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" }), // YYYY-MM-DD in IST
+        date: date.toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" }), // YYYY-MM-DD in IST (will be converted in components)
         day: daysOfWeek[date.getDay()],
       };
     });

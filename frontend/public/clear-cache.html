@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clear StudBud Cache</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        button {
+            background-color: #ff4444;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+        }
+        button:hover {
+            background-color: #cc3333;
+        }
+        .success {
+            color: #22c55e;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+        .info {
+            background-color: #e3f2fd;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧹 Clear StudBud Cache</h1>
+        <p>Click the button below to clear all cached data from your browser for a fresh start.</p>
+        
+        <div class="info">
+            <h3>What will be cleared:</h3>
+            <ul>
+                <li>Active tab preference</li>
+                <li>Last fetch timestamp</li>
+                <li>Any other localStorage data</li>
+            </ul>
+        </div>
+        
+        <button onclick="clearAllCache()">Clear All Browser Cache</button>
+        <button onclick="window.close()">Close</button>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        function clearAllCache() {
+            try {
+                // Clear localStorage
+                localStorage.clear();
+                
+                // Clear sessionStorage
+                sessionStorage.clear();
+                
+                // Show success message
+                document.getElementById('result').innerHTML = 
+                    '<div class="success">✅ All browser cache cleared successfully!<br>You can now refresh the StudBud app for a fresh start.</div>';
+                
+                console.log('✅ StudBud cache cleared successfully');
+            } catch (error) {
+                document.getElementById('result').innerHTML = 
+                    '<div style="color: red;">❌ Error clearing cache: ' + error.message + '</div>';
+                console.error('❌ Error clearing cache:', error);
+            }
+        }
+        
+        // Auto-clear on page load if ?auto=true
+        if (window.location.search.includes('auto=true')) {
+            clearAllCache();
+        }
+    </script>
+</body>
+</html>
