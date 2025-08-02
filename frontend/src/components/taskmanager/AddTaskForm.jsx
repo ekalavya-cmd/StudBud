@@ -5,6 +5,21 @@ import { getCardStyles } from "../utils/themeUtils";
 
 function AddTaskForm({ addTask, currentTheme }) {
   const styles = getCardStyles(currentTheme);
+
+  // CSS to fix calendar icon visibility in dark mode and reduce gap
+  const dateInputStyles = `
+    input[type="date"] {
+      padding-right: 8px;
+    }
+    input[type="date"]::-webkit-calendar-picker-indicator {
+      ${currentTheme === "Dark Mode" ? `
+        filter: invert(1);
+        opacity: 0.8;
+      ` : ""}
+      cursor: pointer;
+      margin-left: 4px;
+    }
+  `;
   const [newTask, setNewTask] = useState({
     title: "",
     dueDate: "",
@@ -83,10 +98,13 @@ function AddTaskForm({ addTask, currentTheme }) {
   const validateAndCorrectYear = (dateValue) => {
     if (!dateValue || !isValidDate(dateValue)) return;
     const [year, month, day] = dateValue.split("-");
-    if (parseInt(year) !== currentYear) {
+    const inputYear = parseInt(year);
+    
+    // Only warn for past years, allow future years
+    if (inputYear < currentYear) {
       const correctedDate = `${currentYear}-${month}-${day}`;
       setNewTask((prev) => ({ ...prev, dueDate: correctedDate }));
-      toast.info(`Year corrected to ${currentYear}, the current year.`);
+      toast.info(`Year corrected to ${currentYear}. Past years are not allowed.`);
     }
   };
 
@@ -101,6 +119,7 @@ function AddTaskForm({ addTask, currentTheme }) {
 
   return (
     <div className={styles.formSection}>
+      <style>{dateInputStyles}</style>
       <div className="flex flex-wrap md:flex-nowrap gap-3">
         <input
           type="text"
@@ -127,7 +146,6 @@ function AddTaskForm({ addTask, currentTheme }) {
           onKeyDown={(e) => handleAddTaskKeyPress(e, prioritySelectRef)}
           ref={dueDateInputRef}
           min={`${currentYear}-01-01`}
-          max={`${currentYear}-12-31`}
         />
         <select
           className={styles.input}

@@ -41,6 +41,13 @@ function CalendarPage({
     }
   }, []);
 
+  // Helper function to format date from yyyy-mm-dd to dd-mm-yyyy
+  const formatDateForDisplay = (dateString) => {
+    if (!dateString) return '';
+    const [year, month, day] = dateString.split('-');
+    return `${day}-${month}-${year}`;
+  };
+
   // Handle date selection
   const handleDateChange = (date) => {
     setSelectedDate(date);
@@ -414,7 +421,7 @@ function CalendarPage({
                             className={`${styles.smallIcon} calendar-icon`}
                             aria-hidden="true"
                           />
-                          <span>Due: {task.dueDate}</span>
+                          <span>Due: {formatDateForDisplay(task.dueDate)}</span>
                           <span className="ml-2">Hours: {task.hours || 0}</span>
                         </p>
                       </div>

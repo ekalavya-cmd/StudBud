@@ -22,6 +22,13 @@ function TaskList({
 
   const currentYear = new Date().getFullYear();
 
+  // Helper function to format date from yyyy-mm-dd to dd-mm-yyyy
+  const formatDateForDisplay = (dateString) => {
+    if (!dateString) return '';
+    const [year, month, day] = dateString.split('-');
+    return `${day}-${month}-${year}`;
+  };
+
   const isValidDate = (dateString) => {
     const regex = /^\d{4}-\d{2}-\d{2}$/;
     if (!regex.test(dateString)) {
@@ -91,10 +98,13 @@ function TaskList({
   const validateAndCorrectYear = (dateValue) => {
     if (!dateValue || !isValidDate(dateValue)) return;
     const [year, month, day] = dateValue.split("-");
-    if (parseInt(year) !== currentYear) {
+    const inputYear = parseInt(year);
+    
+    // Only warn for past years, allow future years
+    if (inputYear < currentYear) {
       const correctedDate = `${currentYear}-${month}-${day}`;
       setEditingTask((prev) => ({ ...prev, dueDate: correctedDate }));
-      toast.info(`Year corrected to ${currentYear}, the current year.`);
+      toast.info(`Year corrected to ${currentYear}. Past years are not allowed.`);
     }
   };
 
@@ -148,6 +158,17 @@ function TaskList({
     .task-card:hover .calendar-icon {
       transform: scale(1) !important;
     }
+    input[type="date"] {
+      padding-right: 8px;
+    }
+    input[type="date"]::-webkit-calendar-picker-indicator {
+      ${currentTheme === "Dark Mode" ? `
+        filter: invert(1);
+        opacity: 0.8;
+      ` : ""}
+      cursor: pointer;
+      margin-left: 4px;
+    }
   `;
 
   return (
@@ -192,7 +213,6 @@ function TaskList({
                   }
                   ref={editDueDateInputRef}
                   min={`${currentYear}-01-01`}
-                  max={`${currentYear}-12-31`}
                 />
                 <select
                   className={styles.input}
@@ -293,12 +313,12 @@ function TaskList({
                       <Calendar
                         className={`${styles.smallIcon} calendar-icon`}
                       />
-                      <span>Due: {task.dueDate}</span>
+                      <span>Due: {formatDateForDisplay(task.dueDate)}</span>
                       <span className="ml-2">Hours: {task.hours || 0}</span>
                     </p>
                     {task.completed && task.completedDate && (
                       <p className={`text-xs mt-1 ${styles.mutedText}`}>
-                        Completed on: {task.completedDate}
+                        Completed on: {formatDateForDisplay(task.completedDate)}
                       </p>
                     )}
                   </div>

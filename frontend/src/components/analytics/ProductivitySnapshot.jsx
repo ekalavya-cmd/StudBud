@@ -4,6 +4,13 @@ import { getCardStyles } from "../utils/themeUtils";
 function ProductivitySnapshot({ tasks, past7Days, currentTheme }) {
   const styles = getCardStyles(currentTheme);
 
+  // Helper function to format date from yyyy-mm-dd to dd-mm-yyyy
+  const formatDateForDisplay = (dateString) => {
+    if (!dateString) return '';
+    const [year, month, day] = dateString.split('-');
+    return `${day}-${month}-${year}`;
+  };
+
   const nonDeletedTasks = tasks.filter((task) => !task.deleted);
 
   // Ensure todayStr is in IST
@@ -75,9 +82,9 @@ function ProductivitySnapshot({ tasks, past7Days, currentTheme }) {
             .replace(/, (?=[^,]*$)/, " and "); // Replace last comma with "and"
     const dates =
       mostProductiveDays.length === 1
-        ? mostProductiveDays[0].date
+        ? formatDateForDisplay(mostProductiveDays[0].date)
         : mostProductiveDays
-            .map((day) => day.date)
+            .map((day) => formatDateForDisplay(day.date))
             .join(", ")
             .replace(/, (?=[^,]*$)/, " and ");
     mostProductiveInsight = `You're most productive on ${dayNames}, with ${maxTasks} task${

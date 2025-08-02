@@ -9,6 +9,14 @@ function UpcomingTasksCard({
   currentTheme,
 }) {
   const styles = getCardStyles(currentTheme);
+
+  // Helper function to format date from yyyy-mm-dd to dd-mm-yyyy
+  const formatDateForDisplay = (dateString) => {
+    if (!dateString) return '';
+    const [year, month, day] = dateString.split('-');
+    return `${day}-${month}-${year}`;
+  };
+
   const nonDeletedTasks = tasks.filter((task) => !task.deleted);
   const upcomingTasks = nonDeletedTasks
     .filter((task) => !task.completed)
@@ -73,7 +81,7 @@ function UpcomingTasksCard({
                   className={`text-sm flex items-center space-x-1 ${styles.mutedText}`}
                 >
                   <Calendar className={`${styles.smallIcon} calendar-icon`} />
-                  <span>Due: {task.dueDate}</span>
+                  <span>Due: {formatDateForDisplay(task.dueDate)}</span>
                   <span className="ml-2">Hours: {task.hours || 0}</span>
                 </p>
               </div>
