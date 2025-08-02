@@ -2,7 +2,8 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const dotenv = require("dotenv");
-const axios = require("axios"); // Using axios instead of fetch
+const { GoogleGenAI } = require("@google/genai");
+const { connectToDatabase } = require("./db-config");
 
 dotenv.config();
 
@@ -15,12 +16,6 @@ const app = express();
 // Middleware
 app.use(cors());
 app.use(express.json());
-
-// MongoDB Connection
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => console.log("MongoDB connected"))
-  .catch((err) => console.error("MongoDB connection error:", err));
 
 // Define the UserData schema directly in server.js (as provided)
 const userDataSchema = new mongoose.Schema({
@@ -290,7 +285,7 @@ app.post("/api/user/:userId", async (req, res) => {
   }
 });
 
-// Function to try getting a suggestion from Hugging Face API with optimized models
+/* Legacy Hugging Face function - DEPRECATED, using Gemini now
 async function getHuggingFaceSuggestion(promptText) {
   console.log(
     "🤖 Attempting to use Hugging Face API for suggestion generation..."
@@ -692,9 +687,64 @@ async function getHuggingFaceSuggestion(promptText) {
   // If we get here, all models failed
   console.log("❌ All Hugging Face models failed to generate a response");
   throw new Error("All Hugging Face models failed to generate a response");
+} */
+
+// Initialize Gemini AI
+const genAI = new GoogleGenAI({
+  apiKey: process.env.GEMINI_API_KEY,
+});
+
+// Function to get suggestion from Gemini 2.5 Flash Lite
+async function getGeminiSuggestion(promptText) {
+  console.log("🤖 Attempting to use Gemini 2.5 Flash Lite for suggestion generation...");
+
+  // Check if we have an API key
+  if (!process.env.GEMINI_API_KEY) {
+    console.log("❌ No Gemini API key configured");
+    throw new Error("No API key configured");
+  }
+
+  try {
+    console.log("📤 Sending request to Gemini API...");
+    console.log(`📋 Prompt: ${promptText.substring(0, 200)}...`);
+
+    // Generate content using the new SDK format
+    const response = await genAI.models.generateContent({
+      model: "gemini-2.5-flash-lite",
+      generationConfig: {
+        temperature: 0.7,
+        topP: 0.9,
+        topK: 40,
+        maxOutputTokens: 300,
+      },
+      contents: [{ parts: [{ text: promptText }] }]
+    });
+
+    const generatedText = response.text;
+
+    // Validate the response
+    if (!generatedText || generatedText.length < 10) {
+      console.log("❌ Gemini returned empty or too short response");
+      throw new Error("Empty or too short response");
+    }
+
+    // Clean up the generated text
+    const cleanedText = generatedText.trim();
+
+    console.log(`✅ Successfully generated suggestion using Gemini 2.5 Flash Lite: ${cleanedText.substring(0, 100)}...`);
+
+    return {
+      text: cleanedText,
+      model: "gemini-2.5-flash-lite",
+    };
+
+  } catch (error) {
+    console.log(`❌ Error with Gemini API: ${error.message || error.toString()}`);
+    throw error;
+  }
 }
 
-// Endpoint for AI suggestions using Hugging Face Inference API
+// Endpoint for AI suggestions using Gemini API
 app.post("/api/ai-suggestion", async (req, res) => {
   console.log("\n🔍 API Request: /api/ai-suggestion");
   const { tasks = [], studyHabits = {}, customPrompt } = req.body;
@@ -746,29 +796,29 @@ app.post("/api/ai-suggestion", async (req, res) => {
     }
 
     let suggestion;
-    let usedHuggingFace = false;
-    let huggingFaceModel = null;
+    let usedGemini = false;
+    let geminiModel = null;
 
     // Add a consistent delay to simulate processing time (improves UX)
     await new Promise((resolve) => setTimeout(resolve, 1200)); // Increased delay to 1.2 seconds
 
-    // Try to get a suggestion from Hugging Face first
+    // Try to get a suggestion from Gemini first
     try {
-      // Always try Hugging Face first
+      // Always try Gemini first
       const promptToUse =
         customPrompt || generateDefaultPrompt(tasks, studyHabits);
-      const huggingFaceResponse = await getHuggingFaceSuggestion(promptToUse);
+      const geminiResponse = await getGeminiSuggestion(promptToUse);
 
-      suggestion = huggingFaceResponse.text;
-      huggingFaceModel = huggingFaceResponse.model;
-      usedHuggingFace = true;
+      suggestion = geminiResponse.text;
+      geminiModel = geminiResponse.model;
+      usedGemini = true;
 
       console.log(
-        `✅ Successfully used Hugging Face model: ${huggingFaceModel}`
+        `✅ Successfully used Gemini model: ${geminiResponse.model}`
       );
     } catch (error) {
-      // If Hugging Face fails, fall back to local generation
-      console.log(`❌ Hugging Face API failed: ${error.message}`);
+      // If Gemini fails, fall back to local generation
+      console.log(`❌ Gemini API failed: ${error.message}`);
       console.log(`⚙️ Falling back to local suggestion generation`);
 
       if (isStudyTipRequest) {
@@ -983,17 +1033,17 @@ app.post("/api/ai-suggestion", async (req, res) => {
       { upsert: true }
     );
 
-    // Include metadata about whether Hugging Face was used
+    // Include metadata about whether Gemini was used
     console.log(
       `✅ Sending response (source: ${
-        usedHuggingFace ? "huggingface" : "local"
+        usedGemini ? "gemini" : "local"
       })`
     );
     res.json({
       suggestion,
       meta: {
-        source: usedHuggingFace ? "huggingface" : "local",
-        model: huggingFaceModel,
+        source: usedGemini ? "gemini" : "local",
+        model: geminiModel,
       },
     });
   } catch (error) {
@@ -1020,20 +1070,38 @@ function generateDefaultPrompt(tasks, studyHabits) {
   const todayStudyHours =
     studyHabits.studyHoursLog?.find((log) => log.date === todayStr)?.hours || 0;
 
-  return `Create a study plan for today based on this information:
-Tasks: ${JSON.stringify(filteredTasks)}
-Study habits: ${JSON.stringify(studyHabits)}
-Today's date: ${todayStr}
-Today's study hours: ${todayStudyHours}
-Current streak: ${studyHabits.streak || 0} days
+  return `You are an expert academic advisor helping students create effective daily study plans across all disciplines.
 
-Format the response with these sections:
-- High Priority tasks
-- Medium Priority tasks 
-- Low Priority tasks
-- Study tip
-- Habits information
-- End with a motivational message that is applicable to students in any field, not specific to IT or computing`;
+TASK: Create a personalized study plan for today based on the student's current situation.
+
+STUDENT DATA:
+- Today's date: ${todayStr}
+- Current study hours today: ${todayStudyHours}
+- Study streak: ${studyHabits.streak || 0} days
+- Pending tasks: ${filteredTasks.length > 0 ? JSON.stringify(filteredTasks, null, 2) : 'No pending tasks'}
+
+OUTPUT FORMAT:
+Organize your response with these exact sections:
+
+**High Priority Tasks:**
+[List any high priority tasks due today or soon]
+
+**Medium Priority Tasks:**
+[List any medium priority tasks]
+
+**Low Priority Tasks:**
+[List any low priority tasks]
+
+**Study Tip:**
+[One practical study technique applicable to any subject]
+
+**Study Habits:**
+- Total study hours today: ${todayStudyHours} hours
+- Current streak: ${studyHabits.streak || 0} days
+- [Brief encouraging comment about their progress]
+
+**Motivation:**
+[End with an encouraging message applicable to students in any academic field]`;
 }
 
 // Function to generate a fallback suggestion when API calls fail
@@ -1118,4 +1186,19 @@ Your dedication and consistency will lead you to success in your field of study.
 }
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+// Initialize database connection and start server
+async function startServer() {
+  try {
+    await connectToDatabase();
+    app.listen(PORT, () => {
+      console.log(`✅ Server running on port ${PORT}`);
+      console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+    });
+  } catch (error) {
+    console.error("❌ Failed to start server:", error.message);
+    process.exit(1);
+  }
+}
+
+startServer();

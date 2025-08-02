@@ -1,4 +1,4 @@
-// Updated aiService.js with enhanced Hugging Face model support
+// Updated aiService.js with Gemini 2.5 Flash Lite integration
 export const getStudySuggestion = async ({
   tasks = [],
   studyStats = {},
@@ -31,11 +31,11 @@ export const getStudySuggestion = async ({
       throw new Error(data.error);
     }
 
-    // Log the source of the suggestion (Hugging Face model or local fallback)
+    // Log the source of the suggestion (Gemini model or local fallback)
     if (data.meta) {
-      if (data.meta.source === "huggingface") {
+      if (data.meta.source === "gemini") {
         console.log(
-          `📱 Client: Generated using Hugging Face model: ${data.meta.model}`
+          `📱 Client: Generated using Gemini model: ${data.meta.model}`
         );
       } else if (data.meta.source === "cache") {
         console.log(`📱 Client: Retrieved from cache`);

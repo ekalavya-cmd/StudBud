@@ -38,7 +38,7 @@ function Layout() {
     localStorage.setItem("activeTab", activeTab);
   }, [activeTab]);
 
-  const userId = "user123";
+  const userId = "demouser";
   const styles = getCardStyles(currentTheme);
 
   const getLocalDateString = (date) => {
@@ -399,27 +399,26 @@ function Layout() {
       const prompt = {
         tasks: [],
         studyStats: {},
-        customPrompt: `Generate a concise study tip (2-3 sentences, max 50 words) that is clear, actionable, and applicable to any subject. Format the tip as follows:
+        customPrompt: `You are an expert academic tutor with years of experience helping students across all disciplines achieve their learning goals.
 
-Here's a study tip for students:
+TASK: Create one concise, actionable study tip that can be applied by students in any field of study.
 
-- [A concise, actionable study tip that improves learning efficiency]
+REQUIREMENTS:
+- Keep it to 2-3 sentences maximum
+- Use clear, simple language
+- Focus on a practical technique or strategy
+- Make it immediately actionable
+- Ensure it works for any subject (science, arts, business, etc.)
 
-**Instructions:**
-- **Objective**: State what the tip improves (e.g., memory retention, focus, time management).
-- **Actionable Advice**: Provide a specific action (e.g., "Study in 25-minute blocks with 5-minute breaks").
-- **Scientific/Practical Basis**: Include a brief reason (e.g., "This boosts productivity by matching attention spans").
-- **Context/Applicability**: Mention when it works best (e.g., "Ideal for long study sessions").
-- Ensure variety by focusing on a different aspect of learning each time (e.g., memory, focus, time management).
-- Keep it simple and under 50 words, focusing on the crux without over-explaining.
-- Do NOT start the tip with "Practice coding daily" or any repetitive phrase.
-- Do not include additional sections like "General Study Tip" or "Habits".
+OUTPUT FORMAT:
+Provide only the study tip without any introductory phrases or labels.
 
-**Examples of concise tips:**
-- To improve focus, study in 25-minute blocks with 5-minute breaks, known as the Pomodoro Technique. This matches your brain's attention span, boosting productivity. Ideal for long study sessions.
-- Enhance memory by reviewing notes 1 day, 1 week, and 1 month after learning, using spaced repetition. This strengthens recall, per cognitive science. Best for exam prep over weeks.
+EXAMPLES:
+"Use the Feynman Technique: explain concepts in simple terms as if teaching a child. This reveals knowledge gaps and strengthens understanding."
 
-(Request ID: ${timestamp})`,
+"Study in 25-minute focused blocks with 5-minute breaks. This Pomodoro method matches your brain's attention span and prevents mental fatigue."
+
+Now provide a unique study tip: (Request ID: ${timestamp})`,
       };
       const response = await getStudySuggestion(prompt);
 
@@ -508,7 +507,31 @@ Here's a study tip for students:
           totalHours: studyStats.totalHours || 0,
           completedTasks: tasks.filter((task) => task.completed).length,
         },
-        customPrompt: `Generate a list of 10 short motivational messages (each 1-2 sentences, max 30 words) for a student who has studied for ${todayStudyHours} hours today and completed ${totalTasksCompletedToday} tasks. The messages should be applicable to students in all fields, not just computing or IT. Each message should be unique, encouraging, and focused on their progress in their studies. Format each message on a new line without numbering or bullet points. (Request ID: ${timestamp})`,
+        customPrompt: `You are a motivational coach specializing in academic success and student engagement across all fields of study.
+
+TASK: Generate exactly 10 short motivational messages for a student's daily progress report.
+
+STUDENT'S TODAY'S ACHIEVEMENTS:
+- Study hours completed: ${todayStudyHours} hours
+- Tasks completed: ${totalTasksCompletedToday} tasks
+
+REQUIREMENTS:
+- Each message: 1-2 sentences, maximum 30 words
+- Focus on their specific achievements today
+- Be encouraging and positive about their progress
+- Applicable to students in any field (science, arts, business, literature, etc.)
+- Each message must be unique and varied in approach
+- No numbering, bullet points, or labels
+
+OUTPUT FORMAT:
+Provide exactly 10 messages, each on a separate line, with no additional formatting.
+
+EXAMPLES:
+Your ${todayStudyHours} hours of focused study today show real dedication to your goals.
+Completing ${totalTasksCompletedToday} tasks demonstrates excellent time management skills.
+Every hour you invest in learning brings you closer to mastering your field.
+
+Now generate 10 unique motivational messages: (Request ID: ${timestamp})`,
       };
       const response = await getStudySuggestion(prompt);
 
