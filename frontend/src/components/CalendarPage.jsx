@@ -5,6 +5,10 @@ import {
   CheckCircle,
   Calendar as CalendarIcon,
   PlusCircle,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
 } from "lucide-react";
 import { getCardStyles } from "../components/utils/themeUtils";
 
@@ -260,12 +264,12 @@ function CalendarPage({
               }`}
               aria-label="Task calendar - select a date to view tasks"
               navigationLabel={({ date, label, locale, view }) => 
-                `Navigate calendar: ${label}`
+                `${label}`
               }
-              next2Label="Go to next year"
-              nextLabel="Go to next month"
-              prev2Label="Go to previous year"
-              prevLabel="Go to previous month"
+              next2Label={<ChevronsRight className="w-4 h-4" />}
+              nextLabel={<ChevronRight className="w-4 h-4" />}
+              prev2Label={<ChevronsLeft className="w-4 h-4" />}
+              prevLabel={<ChevronLeft className="w-4 h-4" />}
               tileContent={({ date }) => {
                 const dateString = getLocalDateString(date);
                 if (!dateString) return null;
