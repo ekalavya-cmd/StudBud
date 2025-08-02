@@ -14,7 +14,7 @@ function StudyHoursTrend({ studyStats, past7Days, currentTheme }) {
 
   const maxHours = Math.max(...studyHoursData, 1);
   const studyHoursHeights = studyHoursData.map(
-    (hours) => (hours / maxHours) * 20
+    (hours) => (hours / maxHours) * 100 // Use percentage of max height (100px)
   );
   const hasStudyHours = studyHoursData.some((hours) => hours > 0);
 
@@ -30,7 +30,11 @@ function StudyHoursTrend({ studyStats, past7Days, currentTheme }) {
           {past7Days.map((dayObj, index) => (
             <div key={dayObj.date} className="flex flex-col items-center">
               <div
-                className={`w-6 h-${Math.round(studyHoursHeights[index])} ${styles.barHours}`}
+                className={`w-6 ${styles.barHours}`}
+                style={{ 
+                  height: `${Math.max(studyHoursHeights[index], 4)}px`,
+                  minHeight: studyHoursData[index] > 0 ? '4px' : '2px' 
+                }}
               ></div>
               <span className={`text-xs font-medium mt-2 ${styles.subtitle}`}>
                 {dayObj.day}

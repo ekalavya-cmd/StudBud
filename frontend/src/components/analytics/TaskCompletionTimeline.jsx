@@ -15,7 +15,7 @@ function TaskCompletionTimeline({ tasks, past7Days, currentTheme }) {
 
   const maxCompletions = Math.max(...completionData, 1);
   const completionHeights = completionData.map(
-    (count) => (count / maxCompletions) * 20
+    (count) => (count / maxCompletions) * 100 // Use percentage of max height (100px)
   );
   const hasCompletedTasks = completionData.some((count) => count > 0);
 
@@ -31,7 +31,11 @@ function TaskCompletionTimeline({ tasks, past7Days, currentTheme }) {
           {past7Days.map((dayObj, index) => (
             <div key={dayObj.date} className="flex flex-col items-center">
               <div
-                className={`w-6 h-${Math.round(completionHeights[index])} ${styles.barCompletion}`}
+                className={`w-6 ${styles.barCompletion}`}
+                style={{ 
+                  height: `${Math.max(completionHeights[index], 4)}px`,
+                  minHeight: completionData[index] > 0 ? '4px' : '2px' 
+                }}
               ></div>
               <span className={`text-xs font-medium mt-2 ${styles.subtitle}`}>
                 {dayObj.day}
