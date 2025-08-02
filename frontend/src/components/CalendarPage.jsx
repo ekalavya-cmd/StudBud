@@ -152,7 +152,7 @@ function CalendarPage({
     }
     .dark-mode-calendar .react-calendar__navigation button:hover,
     .dark-mode-calendar .react-calendar__navigation button:focus {
-      background: #374151; /* bg-gray-700 on hover/focus */
+      background: none !important;
     }
     .dark-mode-calendar .react-calendar__month-view__weekdays__weekday {
       color: #ffffff; /* Days of the week to white */
@@ -237,6 +237,13 @@ function CalendarPage({
     }
     .react-calendar__navigation {
       margin-bottom: 0.5rem;
+    }
+    .react-calendar__navigation button {
+      background: none !important;
+    }
+    .react-calendar__navigation button:hover,
+    .react-calendar__navigation button:focus {
+      background: none !important;
     }
     .react-calendar__month-view__weekdays__weekday {
       font-size: 1.1rem; /* Increase weekday label font size for all themes */

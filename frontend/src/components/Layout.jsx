@@ -265,55 +265,55 @@ function Layout() {
     }));
   }, [tasks]);
 
-  useEffect(() => {
-    const saveUserData = async () => {
-      try {
-        const serializedStudyStats = {
-          totalHours: studyStats.totalHours,
-          completedTasks: studyStats.completedTasks,
-          streak: studyStats.streak,
-          lastActiveDate: studyStats.lastActiveDate || null,
-          lastStreakUpdate: studyStats.lastStreakUpdate || null,
-          studyHoursLog: studyStats.studyHoursLog || [],
-        };
+  const saveUserData = async () => {
+    try {
+      const serializedStudyStats = {
+        totalHours: studyStats.totalHours,
+        completedTasks: studyStats.completedTasks,
+        streak: studyStats.streak,
+        lastActiveDate: studyStats.lastActiveDate || null,
+        lastStreakUpdate: studyStats.lastStreakUpdate || null,
+        studyHoursLog: studyStats.studyHoursLog || [],
+      };
 
-        const dataToSend = {
-          tasks,
-          studyStats: serializedStudyStats,
-          points,
-          badges,
-          themes: [
-            "Light Mode",
-            "Dark Mode",
-            "Ocean Breeze",
-            "Sunset Glow",
-            "Forest Whisper",
-          ],
-          currentTheme,
-          unlockedThemes,
-        };
+      const dataToSend = {
+        tasks,
+        studyStats: serializedStudyStats,
+        points,
+        badges,
+        themes: [
+          "Light Mode",
+          "Dark Mode",
+          "Ocean Breeze",
+          "Sunset Glow",
+          "Forest Whisper",
+        ],
+        currentTheme,
+        unlockedThemes,
+      };
 
-        const response = await fetch(
-          `http://localhost:5000/api/user/${userId}`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(dataToSend),
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error(
-            `Failed to save user data: ${response.status} - ${await response.text()}`
-          );
+      const response = await fetch(
+        `http://localhost:5000/api/user/${userId}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(dataToSend),
         }
-      } catch (err) {
-        toast.error(`Failed to save progress: ${err.message}`);
-      }
-    };
+      );
 
+      if (!response.ok) {
+        throw new Error(
+          `Failed to save user data: ${response.status} - ${await response.text()}`
+        );
+      }
+    } catch (err) {
+      toast.error(`Failed to save progress: ${err.message}`);
+    }
+  };
+
+  useEffect(() => {
     const debounceSave = setTimeout(() => {
       saveUserData();
     }, 1000);
@@ -690,16 +690,13 @@ Here's a study tip for students:
         notifications.push("🏆 Badge Earned: Task Titan!");
       }
 
-      const dueDate = new Date(task.dueDate);
-      const todayDate = new Date();
-      if (dueDate > todayDate) {
-        const earlyTasks = updatedTasks.filter(
-          (t) => new Date(t.dueDate) > todayDate && t.completed
-        ).length;
-        if (earlyTasks >= 3 && !badges.includes("Early Bird")) {
-          newBadges.push("Early Bird");
-          notifications.push("🏆 Badge Earned: Early Bird!");
-        }
+      // Check for Early Bird badge: tasks completed before their due date
+      const earlyTasks = updatedTasks.filter(
+        (t) => t.completed && t.completedDate && t.dueDate && t.completedDate < t.dueDate
+      ).length;
+      if (earlyTasks >= 3 && !badges.includes("Early Bird")) {
+        newBadges.push("Early Bird");
+        notifications.push("🏆 Badge Earned: Early Bird!");
       }
 
       updateStreak(today);
@@ -740,6 +737,13 @@ Here's a study tip for students:
 
       toast.success("🏆 Badge Earned: Streak Star!");
       toast.success("🎉 +50 Points for 7-Day Streak!");
+
+      // Save data after awarding streak badge
+      const debounceSave = setTimeout(() => {
+        saveUserData();
+      }, 1000);
+
+      return () => clearTimeout(debounceSave);
     }
   }, [studyStats.streak, badges, points]); // Added missing dependencies
 

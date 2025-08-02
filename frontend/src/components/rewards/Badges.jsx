@@ -45,7 +45,7 @@ function Badges({ tasks, studyStats, badges, currentTheme }) {
   ).length;
   const totalCompletedTasks = tasks.filter((task) => task.completed).length;
   const earlyCompletedTasks = tasks.filter(
-    (task) => task.completed && task.completedDate < task.dueDate
+    (task) => task.completed && task.completedDate && task.dueDate && task.completedDate < task.dueDate
   ).length;
   const currentStreak = studyStats.streak || 0;
 
