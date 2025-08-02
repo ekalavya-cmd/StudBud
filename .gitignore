@@ -172,9 +172,6 @@ coverage/
 .parcel-cache/
 
 # ===== PROJECT SPECIFIC =====
-# Remove Atlas.png since it contains sensitive connection info
-frontend/Atlas.png
-Atlas.png
 
 # Any local development files
 local-*
