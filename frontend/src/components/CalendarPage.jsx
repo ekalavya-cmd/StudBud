@@ -1,9 +1,8 @@
 // frontend/src/components/CalendarPage.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import Calendar from "react-calendar";
 import {
   CheckCircle,
-  // Removed unused Circle import
   Calendar as CalendarIcon,
   PlusCircle,
 } from "lucide-react";
@@ -19,43 +18,47 @@ function CalendarPage({
   const [selectedDate, setSelectedDate] = useState(new Date());
   const today = new Date(); // Store today's date for comparison
 
-  // Function to get local date string in YYYY-MM-DD format
-  const getLocalDateString = (date) => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
-  };
+  // Function to get local date string in YYYY-MM-DD format with timezone normalization
+  const getLocalDateString = useCallback((date) => {
+    try {
+      if (!date || isNaN(new Date(date).getTime())) {
+        console.warn('Invalid date provided to getLocalDateString:', date);
+        return null;
+      }
+      const normalizedDate = new Date(date);
+      // Normalize to local timezone to avoid UTC/local time issues
+      const year = normalizedDate.getFullYear();
+      const month = String(normalizedDate.getMonth() + 1).padStart(2, "0");
+      const day = String(normalizedDate.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return null;
+    }
+  }, []);
 
   // Handle date selection
   const handleDateChange = (date) => {
     setSelectedDate(date);
   };
 
-  // Reset selectedDate to today when clicking anywhere on the page, except when clicking on task cards
-  const handleClickOutside = (event) => {
+  // Reset selectedDate to today when clicking outside relevant areas
+  const handleClickOutside = useCallback((event) => {
     const calendarElement = document.querySelector(".react-calendar");
     const isClickInsideCalendar =
       calendarElement && calendarElement.contains(event.target);
 
-    // Check if the click is on a navigation button or a date tile
-    const isNavigationClick = event.target.closest(
-      ".react-calendar__navigation"
-    );
+    // Check if the click is on a date tile
     const isTileClick = event.target.closest(".react-calendar__tile");
 
     // Check if the click is on a task card (including the checkmark button)
     const isTaskCardClick = event.target.closest(".task-card");
 
-    // Reset to today if the click is outside the calendar, on navigation, and NOT on a task card
-    if (
-      !isTileClick &&
-      !isTaskCardClick &&
-      (isNavigationClick || !isClickInsideCalendar)
-    ) {
+    // Reset to today if the click is outside calendar and not on task cards
+    if (!isClickInsideCalendar && !isTaskCardClick && !isTileClick) {
       setSelectedDate(new Date());
     }
-  };
+  }, []);
 
   // Add and remove the click event listener
   useEffect(() => {
@@ -65,50 +68,64 @@ function CalendarPage({
     };
   }, []);
 
-  // Filter tasks for the selected date
-  const tasksForSelectedDate = tasks.filter((task) => {
-    const taskDueDate = getLocalDateString(new Date(task.dueDate));
+  // Filter tasks for the selected date (both completed and incomplete)
+  const tasksForSelectedDate = useMemo(() => {
     const selectedDateString = getLocalDateString(selectedDate);
-    return taskDueDate === selectedDateString && !task.completed;
-  });
+    if (!selectedDateString) return [];
+    
+    return tasks.filter((task) => {
+      if (!task.dueDate) return false;
+      const taskDueDate = getLocalDateString(new Date(task.dueDate));
+      return taskDueDate === selectedDateString;
+    }).sort((a, b) => {
+      // Sort by completion status (incomplete first) then by priority
+      if (a.completed !== b.completed) {
+        return a.completed ? 1 : -1;
+      }
+      const priorityOrder = { High: 0, Medium: 1, Low: 2 };
+      return (priorityOrder[a.priority] || 3) - (priorityOrder[b.priority] || 3);
+    });
+  }, [tasks, selectedDate, getLocalDateString]);
 
   // Check if the selected date is today
-  const isSelectedDateToday =
-    getLocalDateString(selectedDate) === getLocalDateString(today);
+  const isSelectedDateToday = useMemo(() => {
+    const selectedDateString = getLocalDateString(selectedDate);
+    const todayString = getLocalDateString(today);
+    return selectedDateString === todayString;
+  }, [selectedDate, today, getLocalDateString]);
 
   // Define gradient styles for each theme based on themeUtils.js
-  const getThemeGradient = (type) => {
-    switch (currentTheme) {
-      case "Dark Mode":
-        if (type === "current") {
-          // Use the same blue gradient as selected dates when no other date is selected
-          // When another date is selected, use a lighter shade
-          return isSelectedDateToday
-            ? "linear-gradient(135deg, #1E40AF, #1976D2)" // blue-800 to blue-600
-            : "linear-gradient(135deg, #1976D2, #60A5FA)"; // blue-600 to blue-400 (lighter shade)
-        }
-        return "linear-gradient(135deg, #1E40AF, #1976D2)"; // blue-800 to blue-600 for selected dates
-      case "Ocean Breeze":
-        return type === "current"
-          ? "linear-gradient(135deg, #A5F3FC, #22D3EE)" // cyan-100 to cyan-300
-          : "linear-gradient(135deg, #5EEAD4, #14B8A6)"; // teal-300 to teal-500
-      case "Sunset Glow":
-        return type === "current"
-          ? "linear-gradient(135deg, #FED7AA, #FDBA74)" // orange-200 to orange-300
-          : "linear-gradient(135deg, #FCA5A5, #F87171)"; // red-300 to red-400
-      case "Forest Whisper":
-        return type === "current"
-          ? "linear-gradient(135deg, #BBF7D0, #86EFAC)" // green-200 to green-300
-          : "linear-gradient(135deg, #6EE7B7, #10B981)"; // emerald-300 to emerald-500
-      default: // Light Mode
-        return type === "current"
-          ? "linear-gradient(135deg, #C7D2FE, #A5B4FC)" // indigo-200 to indigo-300
-          : "linear-gradient(135deg, #818CF8, #4F46E5)"; // indigo-400 to indigo-600
-    }
-  };
+  const getThemeGradient = useCallback((type) => {
+    const gradients = {
+      "Dark Mode": {
+        current: isSelectedDateToday
+          ? "linear-gradient(135deg, #1E40AF, #1976D2)"
+          : "linear-gradient(135deg, #1976D2, #60A5FA)",
+        selected: "linear-gradient(135deg, #1E40AF, #1976D2)"
+      },
+      "Ocean Breeze": {
+        current: "linear-gradient(135deg, #A5F3FC, #22D3EE)",
+        selected: "linear-gradient(135deg, #5EEAD4, #14B8A6)"
+      },
+      "Sunset Glow": {
+        current: "linear-gradient(135deg, #FED7AA, #FDBA74)",
+        selected: "linear-gradient(135deg, #FCA5A5, #F87171)"
+      },
+      "Forest Whisper": {
+        current: "linear-gradient(135deg, #BBF7D0, #86EFAC)",
+        selected: "linear-gradient(135deg, #6EE7B7, #10B981)"
+      },
+      "Light Mode": {
+        current: "linear-gradient(135deg, #C7D2FE, #A5B4FC)",
+        selected: "linear-gradient(135deg, #818CF8, #4F46E5)"
+      }
+    };
+    
+    return gradients[currentTheme]?.[type] || gradients["Light Mode"][type];
+  }, [currentTheme, isSelectedDateToday]);
 
-  // Custom styles for the calendar, including theme-based gradients
-  const calendarStyles = `
+  // Memoized custom styles for the calendar, including theme-based gradients
+  const calendarStyles = useMemo(() => `
     .react-calendar {
       margin-left: 25px;
     }
@@ -226,7 +243,7 @@ function CalendarPage({
     .task-card:hover .calendar-icon {
       transform: scale(1) !important; /* Prevent scaling on hover */
     }
-  `;
+  `, [currentTheme, getThemeGradient]);
 
   return (
     <div className="space-y-6">
@@ -241,14 +258,61 @@ function CalendarPage({
               className={`${styles.card} p-4 border-none ${
                 currentTheme === "Dark Mode" ? "dark-mode-calendar" : ""
               }`}
+              aria-label="Task calendar - select a date to view tasks"
+              navigationLabel={({ date, label, locale, view }) => 
+                `Navigate calendar: ${label}`
+              }
+              next2Label="Go to next year"
+              nextLabel="Go to next month"
+              prev2Label="Go to previous year"
+              prevLabel="Go to previous month"
               tileContent={({ date }) => {
                 const dateString = getLocalDateString(date);
-                const hasTasks = tasks.some(
-                  (task) =>
-                    getLocalDateString(new Date(task.dueDate)) === dateString &&
-                    !task.completed
+                if (!dateString) return null;
+                
+                const dayTasks = tasks.filter((task) => {
+                  if (!task.dueDate) return false;
+                  const taskDueDate = getLocalDateString(new Date(task.dueDate));
+                  return taskDueDate === dateString;
+                });
+                
+                if (dayTasks.length === 0) return null;
+                
+                const hasIncomplete = dayTasks.some(task => !task.completed);
+                const hasCompleted = dayTasks.some(task => task.completed);
+                
+                return (
+                  <div className="task-indicators" style={{ position: 'absolute', bottom: '2px', display: 'flex', gap: '2px', justifyContent: 'center' }}>
+                    {hasIncomplete && (
+                      <div 
+                        className="task-dot task-dot-incomplete" 
+                        style={{ 
+                          width: '6px', 
+                          height: '6px', 
+                          borderRadius: '50%', 
+                          backgroundColor: currentTheme === "Dark Mode" ? "#6366F1" : 
+                                         currentTheme === "Ocean Breeze" ? "#14B8A6" : 
+                                         currentTheme === "Sunset Glow" ? "#F97316" : 
+                                         currentTheme === "Forest Whisper" ? "#10B981" : "#4F46E5"
+                        }}
+                        title={`${dayTasks.filter(t => !t.completed).length} incomplete task(s)`}
+                      />
+                    )}
+                    {hasCompleted && (
+                      <div 
+                        className="task-dot task-dot-complete" 
+                        style={{ 
+                          width: '6px', 
+                          height: '6px', 
+                          borderRadius: '50%', 
+                          backgroundColor: '#10B981',
+                          opacity: 0.7
+                        }}
+                        title={`${dayTasks.filter(t => t.completed).length} completed task(s)`}
+                      />
+                    )}
+                  </div>
                 );
-                return hasTasks ? <div className="task-dot"></div> : null;
               }}
             />
           </div>
@@ -267,14 +331,15 @@ function CalendarPage({
             {tasksForSelectedDate.length === 0 ? (
               <div>
                 <p className={`py-4 text-center ${styles.noTasksText}`}>
-                  No incomplete tasks for this date.
+                  No tasks for this date.
                 </p>
                 <div className={`p-5 border-t ${styles.border}`}>
                   <button
                     onClick={() => setActiveTab("tasks")}
                     className={styles.buttonTertiary}
+                    aria-label="Navigate to tasks page to add a new task"
                   >
-                    <PlusCircle className="w-5 h-5 mr-2" />
+                    <PlusCircle className="w-5 h-5 mr-2" aria-hidden="true" />
                     Add New Task
                   </button>
                 </div>
@@ -294,6 +359,7 @@ function CalendarPage({
                             ? styles.taskComplete
                             : styles.taskIncomplete
                         }`}
+                        aria-label={`Mark task "${task.title}" as ${task.completed ? 'incomplete' : 'complete'}`}
                       >
                         <CheckCircle
                           className={`w-5 h-5 ${
@@ -304,7 +370,11 @@ function CalendarPage({
                       <div>
                         <div className="flex items-center space-x-2">
                           <h3
-                            className={`text-base font-semibold ${styles.text}`}
+                            className={`text-base font-semibold ${
+                              task.completed 
+                                ? `${styles.text} line-through opacity-60` 
+                                : styles.text
+                            }`}
                           >
                             {task.title}
                           </h3>
@@ -331,6 +401,7 @@ function CalendarPage({
                         >
                           <CalendarIcon
                             className={`${styles.smallIcon} calendar-icon`}
+                            aria-hidden="true"
                           />
                           <span>Due: {task.dueDate}</span>
                           <span className="ml-2">Hours: {task.hours || 0}</span>
