@@ -38,7 +38,7 @@ function Layout() {
     localStorage.setItem("activeTab", activeTab);
   }, [activeTab]);
 
-  const userId = "demouser";
+  const userId = "eyepatch";
   const styles = getCardStyles(currentTheme);
 
   const getLocalDateString = (date) => {

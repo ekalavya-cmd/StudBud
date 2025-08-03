@@ -6,7 +6,7 @@ import { getCardStyles } from "../utils/themeUtils";
 const unlockableThemes = [
   {
     name: "Dark Mode",
-    cost: 50,
+    cost: 100,
     description: "A sleek dark theme for night owls.",
     icon: (
       <Moon className="w-8 h-8 text-indigo-500 transition-transform duration-300 hover:scale-110" />
@@ -14,7 +14,7 @@ const unlockableThemes = [
   },
   {
     name: "Ocean Breeze",
-    cost: 50,
+    cost: 200,
     description: "A refreshing blue and teal gradient theme.",
     icon: (
       <Waves className="w-8 h-8 text-teal-500 transition-transform duration-300 hover:scale-110" />
@@ -22,7 +22,7 @@ const unlockableThemes = [
   },
   {
     name: "Sunset Glow",
-    cost: 50,
+    cost: 300,
     description: "A warm theme with hues of orange and pink.",
     icon: (
       <Sun className="w-8 h-8 text-orange-500 transition-transform duration-300 hover:scale-110" />
@@ -30,7 +30,7 @@ const unlockableThemes = [
   },
   {
     name: "Forest Whisper",
-    cost: 50,
+    cost: 400,
     description: "A calming green theme inspired by nature.",
     icon: (
       <Leaf className="w-8 h-8 text-green-500 transition-transform duration-300 hover:scale-110" />
