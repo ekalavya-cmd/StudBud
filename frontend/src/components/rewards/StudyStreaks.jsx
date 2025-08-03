@@ -15,7 +15,7 @@ function StudyStreaks({ studyStats, currentTheme }) {
       <div className={styles.pointsDisplay}>
         <Flame className={styles.streakIcon} />
         <h4 className={`text-xl font-semibold ${styles.text}`}>
-          Current Streak: {studyStats.streak} Days
+          Current Streak: {studyStats.streak} {studyStats.streak === 1 ? 'Day' : 'Days'}
         </h4>
         <p className={`text-sm mt-1 ${styles.subtitle}`}>
           Keep studying daily to maintain your streak!
