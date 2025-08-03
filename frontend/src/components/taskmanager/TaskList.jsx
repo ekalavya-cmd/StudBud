@@ -281,9 +281,15 @@ function TaskList({
               </div>
             ) : (
               <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
+                <div 
+                  className="flex items-center space-x-3 flex-grow cursor-pointer"
+                  onClick={() => toggleTaskComplete(task.id)}
+                >
                   <button
-                    onClick={() => toggleTaskComplete(task.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleTaskComplete(task.id);
+                    }}
                     className={`p-1 rounded-full transition-all duration-200 ${
                       task.completed
                         ? styles.taskComplete
@@ -344,7 +350,10 @@ function TaskList({
                 </div>
                 <div className="flex space-x-2">
                   <button
-                    onClick={() => handleStartEdit(task)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleStartEdit(task);
+                    }}
                     className={`${styles.editButton} ${
                       task.completed ? "opacity-50 cursor-not-allowed" : ""
                     }`}
@@ -353,7 +362,10 @@ function TaskList({
                     <Edit3 className="w-5 h-5" />
                   </button>
                   <button
-                    onClick={() => handleDeleteTaskWithConfirmation(task)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteTaskWithConfirmation(task);
+                    }}
                     className={styles.deleteButton}
                   >
                     <Trash2 className="w-5 h-5" />

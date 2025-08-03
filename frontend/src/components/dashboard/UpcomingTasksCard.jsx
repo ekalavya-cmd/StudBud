@@ -41,11 +41,15 @@ function UpcomingTasksCard({
         {upcomingTasks.map((task) => (
           <div
             key={task.id}
-            className={`${styles.hoverCard} task-card p-3 rounded-lg flex items-center shadow-sm transition-all duration-300 hover:shadow-md hover:scale-[1.02]`}
+            className={`${styles.hoverCard} task-card p-3 rounded-lg flex items-center shadow-sm transition-all duration-300 hover:shadow-md hover:scale-[1.02] cursor-pointer`}
+            onClick={() => toggleTaskComplete(task.id)}
           >
             <div className="flex items-center space-x-3">
               <button
-                onClick={() => toggleTaskComplete(task.id)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleTaskComplete(task.id);
+                }}
                 className={`p-1 rounded-full transition-all duration-200 ${
                   task.completed ? styles.taskComplete : styles.taskIncomplete
                 }`}

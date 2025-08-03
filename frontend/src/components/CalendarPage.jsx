@@ -20,13 +20,14 @@ function CalendarPage({
 }) {
   const styles = getCardStyles(currentTheme);
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const today = new Date(); // Store today's date for comparison
+  
+  // Memoize today's date to prevent useMemo dependency issues
+  const today = useMemo(() => new Date(), []);
 
   // Function to get local date string in YYYY-MM-DD format with timezone normalization
   const getLocalDateString = useCallback((date) => {
     try {
       if (!date || isNaN(new Date(date).getTime())) {
-        console.warn('Invalid date provided to getLocalDateString:', date);
         return null;
       }
       const normalizedDate = new Date(date);
@@ -36,7 +37,6 @@ function CalendarPage({
       const day = String(normalizedDate.getDate()).padStart(2, "0");
       return `${year}-${month}-${day}`;
     } catch (error) {
-      console.error('Error formatting date:', error);
       return null;
     }
   }, []);
@@ -84,7 +84,7 @@ function CalendarPage({
     return () => {
       document.removeEventListener("click", handleClickOutside);
     };
-  }, []);
+  }, [handleClickOutside]);
 
   // Filter tasks for the selected date (both completed and incomplete)
   const tasksForSelectedDate = useMemo(() => {

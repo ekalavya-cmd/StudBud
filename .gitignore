@@ -183,6 +183,25 @@ test-db/
 # Local configuration overrides
 local.config.js
 
+# Image uploads/temporary files (but keep demo images)
+uploads/
+temp-images/
+image*.png
+image*.jpg
+test*.png
+test*.jpg
+screenshot*.png
+demo*.png
+!public/*.png
+!public/*.jpg
+!public/*.jpeg
+!public/*.gif
+
+# Lock files (keep for easier installation)
+# Uncomment the line below if you want to ignore lock files
+# package-lock.json
+# yarn.lock
+
 # ===== SECURITY =====
 # SSH keys and certificates
 *.pem

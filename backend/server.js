@@ -710,18 +710,22 @@ const genAI = new GoogleGenAI({
 });
 
 // Function to get suggestion from Gemini 2.5 Flash Lite
-async function getGeminiSuggestion(promptText) {
-  console.log("🤖 Attempting to use Gemini 2.5 Flash Lite for suggestion generation...");
-
+async function getGeminiSuggestion(promptText, requestType = "suggestion") {
+  const logMessage = `🤖 [AI] Requesting ${requestType} from Gemini 2.5 Flash Lite...`;
+  console.log(logMessage);
+  
   // Check if we have an API key
   if (!process.env.GEMINI_API_KEY) {
-    console.log("❌ No Gemini API key configured");
+    const errorMsg = "❌ [AI] No Gemini API key configured";
+    console.log(errorMsg);
     throw new Error("No API key configured");
   }
 
   try {
-    console.log("📤 Sending request to Gemini API...");
-    console.log(`📋 Prompt: ${promptText.substring(0, 200)}...`);
+    console.log("📤 [AI] Sending request to Gemini API...");
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`📋 [AI] Prompt preview: ${promptText.substring(0, 200)}...`);
+    }
 
     // Generate content using the new SDK format
     const response = await genAI.models.generateContent({
@@ -746,7 +750,10 @@ async function getGeminiSuggestion(promptText) {
     // Clean up the generated text
     const cleanedText = generatedText.trim();
 
-    console.log(`✅ Successfully generated suggestion using Gemini 2.5 Flash Lite: ${cleanedText.substring(0, 100)}...`);
+    const successMsg = `✅ [AI] Successfully generated ${requestType} using Gemini 2.5 Flash Lite`;
+    const lengthMsg = `📊 [AI] Response length: ${cleanedText.length} characters`;
+    console.log(successMsg);
+    console.log(lengthMsg);
 
     return {
       text: cleanedText,
@@ -754,15 +761,23 @@ async function getGeminiSuggestion(promptText) {
     };
 
   } catch (error) {
-    console.log(`❌ Error with Gemini API: ${error.message || error.toString()}`);
+    const errorMsg = `❌ [AI] Gemini API error for ${requestType}: ${error.message || error.toString()}`;
+    console.log(errorMsg);
     throw error;
   }
 }
 
 // Endpoint for AI suggestions using Gemini API
 app.post("/api/ai-suggestion", async (req, res) => {
-  console.log("\n🔍 API Request: /api/ai-suggestion");
   const { tasks = [], studyHabits = {}, customPrompt } = req.body;
+  
+  // Determine request type for better logging
+  let requestType = "study tip";
+  if (customPrompt && (customPrompt.includes("progress report") || customPrompt.includes("motivational") || customPrompt.includes("STUDENT'S TODAY'S ACHIEVEMENTS") || customPrompt.includes("STUDENT'S COMPREHENSIVE ACHIEVEMENTS"))) {
+    requestType = "progress report";
+  }
+  
+  console.log(`\n📱 [API] Client requested ${requestType} generation`);
 
   try {
     // Validate tasks is an array
@@ -822,18 +837,24 @@ app.post("/api/ai-suggestion", async (req, res) => {
       // Always try Gemini first
       const promptToUse =
         customPrompt || generateDefaultPrompt(tasks, studyHabits);
-      const geminiResponse = await getGeminiSuggestion(promptToUse);
+      
+      // Determine request type based on prompt content
+      let requestType = "study tip";
+      if (customPrompt && (customPrompt.includes("progress report") || customPrompt.includes("motivational") || customPrompt.includes("STUDENT'S TODAY'S ACHIEVEMENTS") || customPrompt.includes("STUDENT'S COMPREHENSIVE ACHIEVEMENTS"))) {
+        requestType = "progress report";
+      }
+      
+      const geminiResponse = await getGeminiSuggestion(promptToUse, requestType);
 
       suggestion = geminiResponse.text;
       geminiModel = geminiResponse.model;
       usedGemini = true;
 
-      console.log(
-        `✅ Successfully used Gemini model: ${geminiResponse.model}`
-      );
+      console.log(`✅ [AI] Successfully generated ${requestType} via Gemini API`);
+      console.log(`📤 [API] Sending response to client`);
     } catch (error) {
       // If Gemini fails, fall back to local generation
-      console.log(`❌ Gemini API failed: ${error.message}`);
+      console.log(`❌ [AI] Gemini API failed, using fallback: ${error.message}`);
       console.log(`⚙️ Falling back to local suggestion generation`);
 
       if (isStudyTipRequest) {

@@ -268,7 +268,7 @@ const getCardStyles = (currentTheme) => {
             : isForestWhisper(currentTheme)
               ? "bg-green-100"
               : "bg-indigo-100"
-    } w-8 h-8 rounded-full flex items-center justify-center mr-3 shadow-sm transition-transform duration-300 hover:scale-110`,
+    } w-8 h-8 rounded-full flex items-center justify-center mr-3 shadow-sm`,
     innerDot: `${
       isDarkMode(currentTheme)
         ? "bg-indigo-500"

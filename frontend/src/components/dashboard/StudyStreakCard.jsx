@@ -18,7 +18,7 @@ function StudyStreakCard({ studyStats, currentTheme }) {
         <Calendar className={styles.icon} />
       </div>
       <p className={`text-4xl font-extrabold tracking-tight ${styles.text}`}>
-        {studyStats.streak} days
+        {studyStats.streak} {studyStats.streak === 1 ? 'day' : 'days'}
       </p>
       <div className="flex space-x-2 mt-4">
         {streakRange.map((day) => (

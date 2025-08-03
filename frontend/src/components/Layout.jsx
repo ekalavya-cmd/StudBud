@@ -487,6 +487,25 @@ Now provide a unique study tip: (Request ID: ${timestamp})`,
         (task) => task.completed && task.completedDate === today
       );
       const totalTasksCompletedToday = tasksCompletedToday.length;
+      
+      // Enhanced daily stats
+      const highPriorityCompletedToday = tasksCompletedToday.filter(task => task.priority === "High").length;
+      const mediumPriorityCompletedToday = tasksCompletedToday.filter(task => task.priority === "Medium").length;
+      const lowPriorityCompletedToday = tasksCompletedToday.filter(task => task.priority === "Low").length;
+      
+      // Calculate points earned today
+      const pointsEarnedToday = tasksCompletedToday.reduce((total, task) => {
+        return total + (task.priority === "High" ? 30 : task.priority === "Medium" ? 20 : 10);
+      }, 0);
+      
+      // Check remaining tasks for today
+      const tasksRemainingToday = tasks.filter(
+        (task) => !task.completed && task.dueDate === today
+      ).length;
+      
+      // Check if any badges were earned today (simplified check)
+      const currentStreak = studyStats.streak || 0;
+      const streakMessage = currentStreak > 0 ? `Current streak: ${currentStreak} day${currentStreak !== 1 ? 's' : ''}` : "No active streak";
 
       const timestamp = Date.now();
       const prompt = {
@@ -500,21 +519,28 @@ Now provide a unique study tip: (Request ID: ${timestamp})`,
         },
         customPrompt: `You are a motivational coach specializing in academic success and student engagement across all fields of study.
 
-TASK: Generate exactly 10 short motivational messages for a student's daily progress report.
+TASK: Generate exactly 10 concise motivational messages for a student's daily progress report.
 
-STUDENT'S TODAY'S ACHIEVEMENTS:
-- Study hours completed: ${todayStudyHours} hours
-- Tasks completed: ${totalTasksCompletedToday} tasks
+STUDENT'S COMPREHENSIVE ACHIEVEMENTS:
+- Study hours completed today: ${todayStudyHours} hours
+- Tasks completed today: ${totalTasksCompletedToday} tasks
+- Points earned today: ${pointsEarnedToday} points
+- Current study streak: ${currentStreak} ${currentStreak === 1 ? 'day' : 'days'}
+- Tasks remaining for today: ${tasksRemainingToday}
+- Total lifetime study hours: ${studyStats.totalHours || 0} hours
+- Total lifetime tasks completed: ${tasks.filter((task) => task.completed).length} tasks
+- Total lifetime points: ${points} points
 
 REQUIREMENTS:
-- Each message: 1-2 sentences, maximum 30 words
-- Focus on their specific achievements today
-- Be encouraging and positive about their progress
+- Each message: Maximum 3 sentences, maximum 50 words total
+- Reference multiple statistics (daily AND lifetime achievements)
+- Be encouraging and highlight both today's progress and cumulative success
+- Weave together different stats (hours, tasks, points, streak, totals)
 - Applicable to students in any field (science, arts, business, literature, etc.)
 - Each message must be unique and varied in approach
 - No numbering, bullet points, or labels
 - IMPORTANT: Do not include any breakdowns by task priority (High/Medium/Low)
-- Only reference total hours studied and total tasks completed
+- Make messages substantive but still concise
 
 OUTPUT FORMAT:
 Provide exactly 10 messages, each on a separate line, with no additional formatting.
@@ -573,24 +599,24 @@ Now generate 10 unique motivational messages: (Request ID: ${timestamp})`,
 
         if (noProgressToday) {
           motivationalMessage =
-            "Starting your learning journey is often the hardest part. Remember that every expert was once a beginner, and your willingness to begin sets you apart. Take that first step today!";
+            "Starting your learning journey is often the hardest part, but you've already taken that crucial first step. Remember that every expert was once a beginner, and your willingness to begin sets you apart from many others. Take pride in your progress today and keep building momentum toward your academic goals!"
         } else if (progressCategory === "beginner") {
           motivationalMessage =
-            "Your commitment to learning is impressive. These early steps build the foundation for all your future success, regardless of what field you're studying.";
+            "Your commitment to learning is truly impressive and shows great character. These early steps you're taking now build the foundation for all your future success and achievements. No matter what field you're studying, this dedication will serve you well throughout your entire academic and professional journey."
         } else if (progressCategory === "intermediate") {
           motivationalMessage =
-            "The consistent effort you're showing in your studies demonstrates real dedication. This steady progress is exactly how lasting expertise is built in any discipline.";
+            "The consistent effort you're showing in your studies demonstrates real dedication and perseverance. This steady progress you're making is exactly how lasting expertise is built in any discipline or field. Your commitment to daily learning will compound over time and lead to remarkable achievements in your chosen area of study."
         } else {
           // advanced
           motivationalMessage =
-            "The depth of knowledge you're building through your sustained commitment to learning is remarkable. Few people achieve this level of dedication, and it will serve you well throughout your life and career.";
+            "The depth of knowledge you're building through your sustained commitment to learning is truly remarkable and inspiring. Few people achieve this level of dedication and consistency in their studies, which makes your efforts stand out significantly. This exceptional commitment will serve you well throughout your entire life and career, opening doors to opportunities you can't even imagine yet."
         }
       }
 
       // Ensure we don't accidentally include the date twice
       if (motivationalMessage.includes("progress for today")) {
         motivationalMessage =
-          "Your commitment to learning is inspiring. Keep nurturing your skills and knowledge, and you'll achieve remarkable results in your field.";
+          "Your commitment to learning is truly inspiring and demonstrates exceptional character. Keep nurturing your skills and knowledge with the same dedication you've shown so far. With this level of consistency and effort, you'll achieve remarkable results in your field and reach heights you never thought possible."
       }
 
       // Filter out any references to specific fields like "tech" or "coding"
@@ -602,16 +628,35 @@ Now generate 10 unique motivational messages: (Request ID: ${timestamp})`,
         motivationalMessage.includes("developer")
       ) {
         motivationalMessage =
-          "Your dedication to learning will open doors to opportunities in your field. Each study session builds valuable skills that will serve you throughout your career.";
+          "Your dedication to learning will open doors to incredible opportunities in your field and beyond. Each study session builds valuable skills and knowledge that will serve you throughout your entire career. Stay focused on your goals and remember that every hour invested in learning is an investment in your future success."
       }
 
-      const progressMessage = `Here's your progress for today (${today}):\n\n- Total Study Hours Today: ${todayStudyHours} hour${todayStudyHours !== 1 ? "s" : ""}\n- Tasks Completed Today: ${totalTasksCompletedToday}\n\n${motivationalMessage}`;
+      const progressMessage = `Here's your progress for today (${today}):\n\n📚 Study Hours: ${todayStudyHours} hour${todayStudyHours !== 1 ? "s" : ""}\n✅ Tasks Completed: ${totalTasksCompletedToday}\n${totalTasksCompletedToday > 0 ? `   🔴 High Priority: ${highPriorityCompletedToday}\n   🟡 Medium Priority: ${mediumPriorityCompletedToday}\n   🟢 Low Priority: ${lowPriorityCompletedToday}\n` : ""}🎯 Points Earned: ${pointsEarnedToday}\n🔥 ${streakMessage}\n${tasksRemainingToday > 0 ? `⏰ Tasks Due Today: ${tasksRemainingToday} remaining\n` : "🎉 All today's tasks completed!\n"}\n${motivationalMessage}`;
       setAiSuggestion(progressMessage);
       setAiSuggestionType("progressReport");
     } catch (error) {
-      setAiSuggestion(
-        "I'm experiencing some technical difficulties generating your progress report. Your hard work today is still valuable! In the meantime, take a moment to reflect on what you've accomplished - every step forward counts toward your academic goals."
-      );
+      // Create fallback report with actual stats even when AI fails
+      const today = getLocalDateString(new Date());
+      const todayStudyHours = studyStats.studyHoursLog.find((log) => log.date === today)?.hours || 0;
+      const tasksCompletedToday = tasks.filter((task) => task.completed && task.completedDate === today);
+      const totalTasksCompletedToday = tasksCompletedToday.length;
+      const highPriorityCompletedToday = tasksCompletedToday.filter(task => task.priority === "High").length;
+      const mediumPriorityCompletedToday = tasksCompletedToday.filter(task => task.priority === "Medium").length;
+      const lowPriorityCompletedToday = tasksCompletedToday.filter(task => task.priority === "Low").length;
+      const pointsEarnedToday = tasksCompletedToday.reduce((total, task) => {
+        return total + (task.priority === "High" ? 30 : task.priority === "Medium" ? 20 : 10);
+      }, 0);
+      const tasksRemainingToday = tasks.filter((task) => !task.completed && task.dueDate === today).length;
+      const currentStreak = studyStats.streak || 0;
+      const streakMessage = currentStreak > 0 ? `Current streak: ${currentStreak} day${currentStreak !== 1 ? 's' : ''}` : "No active streak";
+      
+      const totalLifetimeHours = studyStats.totalHours || 0;
+      const totalLifetimeTasks = tasks.filter((task) => task.completed).length;
+      const totalLifetimePoints = points;
+      
+      const fallbackMessage = `Here's your progress for today (${today}):\n\n📚 Study Hours: ${todayStudyHours} hour${todayStudyHours !== 1 ? "s" : ""}\n✅ Tasks Completed: ${totalTasksCompletedToday}\n${totalTasksCompletedToday > 0 ? `   🔴 High Priority: ${highPriorityCompletedToday}\n   🟡 Medium Priority: ${mediumPriorityCompletedToday}\n   🟢 Low Priority: ${lowPriorityCompletedToday}\n` : ""}🎯 Points Earned: ${pointsEarnedToday}\n🔥 ${streakMessage}\n${tasksRemainingToday > 0 ? `⏰ Tasks Due Today: ${tasksRemainingToday} remaining\n` : "🎉 All today's tasks completed!\n"}\nYour ${todayStudyHours} hours today contribute to your impressive ${totalLifetimeHours} total study hours and demonstrate real commitment to your goals. With ${totalTasksCompletedToday} tasks completed and ${pointsEarnedToday} points earned, you're building toward your ${totalLifetimePoints} lifetime points across ${totalLifetimeTasks} completed tasks. This consistent effort and dedication will lead to remarkable achievements in your field of study.`;
+      
+      setAiSuggestion(fallbackMessage);
       setAiSuggestionType("error");
     } finally {
       setIsAiLoading(false);
