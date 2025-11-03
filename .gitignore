@@ -203,6 +203,7 @@ demo*.png
 
 # Metadata and system files
 .gitattributes
+.claude/
 *.sublime-*
 .history/
 .vscode-test/
