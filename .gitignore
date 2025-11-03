@@ -197,6 +197,16 @@ demo*.png
 !public/*.jpeg
 !public/*.gif
 
+# Documentation files (keep only README.md)
+*.md
+!README.md
+
+# Metadata and system files
+.gitattributes
+*.sublime-*
+.history/
+.vscode-test/
+
 # Lock files (keep for easier installation)
 # Uncomment the line below if you want to ignore lock files
 # package-lock.json
