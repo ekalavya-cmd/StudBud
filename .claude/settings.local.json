@@ -28,7 +28,9 @@
       "Bash(ss:*)",
       "Bash(/dev/null)",
       "Bash(test:*)",
-      "Bash(tree:*)"
+      "Bash(tree:*)",
+      "Bash(find:*)",
+      "Bash(git rm:*)"
     ],
     "deny": []
   }
